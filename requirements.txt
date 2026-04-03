@@ -1,0 +1,9 @@
+langgraph==1.1.4
+langchain==1.2.14
+langchain-openai==1.1.12
+pydantic==2.12.5
+langchain-core==1.2.25
+langgraph-checkpoint==4.0.1
+regex==2025.3.32
+grandalf==0.8
+python-dotenv==1.2.2
