@@ -20,4 +20,4 @@ class GraphState(BaseModel):
     is_valid: bool=False
     error_feedback: str|None=None
     is_completed: bool=False
-    refresher_questions: str|None=None
+    refresher_questions: Dict|None=None
