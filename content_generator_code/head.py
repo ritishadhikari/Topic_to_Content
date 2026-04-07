@@ -106,6 +106,7 @@ async def schedule_architect(state: GraphState):
     prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days)
 
     logger.info(msg=f"Requesting exactly {total_study_days} topics from LLM...")
+    
     plan=await structured_llm.ainvoke(input=prompt)
     
     logger.info(f"LLM Successfully generated {len(plan.daily_topics)} topics")
