@@ -8,61 +8,67 @@ High Level Plans:
     - The subtopics also contains 10 questions that were taught in the section to test the user if they have learnt properly
 
 Graph:
-        [ START ]
-           |
-           v
-+-------------------------+
-|    Input_Processor      | 
-+------------+------------+
-             |
-             v
-+------------+------------+
-|   Schedule_Architect    |
-+------------+------------+
-             |
-             v
-+------------+------------+
-| Daily_Content_Generator | <-----------+ (Entry for next day)
-+------------+------------+             |
-             |                          |
-             v                          |
-+------------+------------+             |
-|  Code_Presence_Checker  |             | (Router Node)
-+------------+------------+             |
-      /              \                  |
- (Has Code)      (No Code)              |
-     |                |                 |
-     v                |                 |
-+------------+        |                 |
-|Code_Syntax_|        |                 | (Agent 1: Skippable)
-|  Checker   |        |                 |
-+-----+------+        |                 |
-      |               |                 |
-      v               v                 |
-+------------+------------+             |
-|  Pedagogical_Validator  |             | (Agent 2: Always Runs)
-+------------+------------+             |
-             |                          |
-      [ Is Content Valid? ]             |
-      /                 \               |
-   (FAIL)              (PASS)           |
-     |                   |              |
-     |                   v              |
-     |           +---------------------+|
-     |           | Refresher Generator ||
-     |           +---------------------+|
-     |                   |              |
-     v                   v              |
-+------------+    +--------------+      |
-|  Refiner   |    |  State_Save  |      |
-+------------+    +------+-------+      |
-     |                   |              |
-     +-------------------+--------------+
-                         |
-                [ Timeline Finished? ]
-                 /                \
-              (NO)               (YES)
-               |                   |
-               v                   v
-      (Next Iteration)         [ END ]
+               [ START ]
+                    |
+                    v
+          +-------------------------+
+          |    Input_Processor      | <-- Sanitizes user inputs & sets defaults
+          +------------+------------+
+                    |
 
+          +-----------------------+
+          | Curriculum_Researcher |  <-- Web search & syllabus synthesis
+          +-----------------------+             
+                    v
+          +------------+------------+
+          |   Schedule_Architect    | <-- Calendar math & Exact JSON topic generation
+          +------------+------------+
+                    |
+                    v
+          +------------+------------+
+          | Daily_Content_Generator | <-----------+ (Entry for next day)
+          +------------+------------+                  |
+                    |                                  |
+                    v                                  |
+          +------------+------------+                  |
+    |---->|  Code_Presence_Checker  |                  | 
+    |     +------------+------------+                  |
+    |            /              \                      |
+    |      (Has Code)      (No Code)                   |
+    |           |                |                     |
+    |           v                |                     |
+    |      +------------+        |                     |
+    |      |Code_Syntax_|        |                     | 
+    |      |  Checker   |        |                     |
+    |      +-----+------+        |                     |
+    |           |               |                      |
+    |           v               v                      |
+    |      +------------+------------+                 |
+    |      |  Pedagogical_Validator  |                 | 
+    |      +------------+------------+                 |
+    |                |                                 |
+    |           [ Is Content Valid? ]                  |
+    |           /                 \                    |
+    |      (FAIL)              (PASS)                  |
+    |           |                   |                  |
+    |                               |                  |
+    |           |                   v                  |
+    |           |           +---------------------+    |
+    |           |           | Refresher Generator |    |
+    |           |           +---------------------+    |
+    |           |                   |                  |
+    |           v                   v                  |
+    |      +------------+    +--------------+          |
+    |------|  Refiner   |    |  State_Save  |          |
+           +------------+    +------+-------+          |
+               |                   |                   |
+               ++                                      |
+                                   |                   |
+                         [ Timeline Finished? ]        |
+                         /                \            |     
+                    (NO)               (YES)           |
+                         |                   |         |
+                         v                   v         |     
+               (Next Iteration)         [ END ]        |     
+                         |                             |
+                         |------------------------------
