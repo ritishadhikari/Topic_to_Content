@@ -32,6 +32,7 @@ class GraphState(BaseModel):
     research_notes: str| None = None
     total_study_days:int=0
     current_topic:str|None=None
+    daily_web_context:str|None=None
     current_target_date: date|None=None
     day_number: int=0
     latest_content: str|None=None

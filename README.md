@@ -18,18 +18,27 @@ Graph:
 
           +-----------------------+
           | Curriculum_Researcher |  <-- Web search & syllabus synthesis
-          +-----------------------+             
+          +-----------------------+  
+                    |           
                     v
+                    |
           +------------+------------+
           |   Schedule_Architect    | <-- Calendar math & Exact JSON topic generation
           +------------+------------+
                     |
-                    v
-          +------------+------------+
-          | Daily_Content_Generator | <-----------+ (Entry for next day)
+                    |
+        +------------+--------------+
+        |   Daily_Content_Researcher| <--(Entry for next Day)   Web Search for Generating contents for 
+        +------------+--------------+                  | 
+                    |                                  |
+                    v                                  |
+                    |                                  |
+          +------------+------------+                  |
+          | Daily_Content_Generator |                  |
           +------------+------------+                  |
                     |                                  |
                     v                                  |
+                    |                                  |
           +------------+------------+                  |
     |---->|  Code_Presence_Checker  |                  | 
     |     +------------+------------+                  |
