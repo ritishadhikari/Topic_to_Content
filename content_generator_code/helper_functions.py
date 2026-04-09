@@ -2,8 +2,16 @@ from typing import Dict, List
 from datetime import date
 import calendar
 
-def add_schedules(existing: List[Dict],new: List[Dict]) -> list[Dict]:
-    return existing+new
+def add_schedules(existing: List[Dict],new: List[Dict]) -> List[Dict]:
+    if len(existing)==0:    return new
+    else:
+        new_map={}
+        for old_info in existing:   new_map[old_info['date']]=old_info
+
+        for new_info in new:    new_map[new_info['date']]=new_info
+
+        return sorted(new_map.values(), key=lambda k: k['date'])
+
 
 async def get_exact_end_date(start_date: date, months_to_add: int) -> date:
     """

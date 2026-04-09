@@ -3,10 +3,12 @@ from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
 import logging
 from helper_functions import (add_schedules, get_exact_end_date)
-from prompts import expert_curriculam_prompt
+from prompts import expert_curriculam_prompt, researcher_prompt
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from pydantic_schemas import CurriculumPlan
+from langchain_community.tools.tavily_search import TavilySearchResults
+
 
 load_dotenv()
 
@@ -26,7 +28,10 @@ class GraphState(BaseModel):
     start_date: date
     system_date: date= Field(default_factory=date.today, frozen=True)
     full_schedule: Annotated[List[Dict], add_schedules] = Field (default_factory=list)
-
+    
+    research_notes: str| None = None
+    total_study_days:int=0
+    current_topic:str|None=None
     current_target_date: date|None=None
     day_number: int=0
     latest_content: str|None=None
@@ -54,6 +59,35 @@ async def input_processor(state:GraphState):
         "day_number": 0,
         "is_completed": False,
         "full_schedule": []
+    }
+
+async def curriculum_researcher(state: GraphState):
+    """ 
+    Uses Tavily to search the live web for the most up-to-date course structures, syllabi, and advanced topics before synthesizing the master outline.
+    """
+    logger.info(msg="---[RESEARCHING] GATHERING LIVE SYLLABUS DATA")
+
+    search_tool=TavilySearchResults(max_results=4, search_depth="advanced")
+    current_year=state.system_date.year
+    search_query=f"Latest Comprehensive syllabus course outline topics for {state.topic} {current_year}"
+    logger.info(msg=f"Executing Web Search: {search_query}")
+
+    try:
+        search_results=await search_tool.ainvoke(input={"query":search_query})
+        web_context="\n\n".join([f"{result.get('url','Unknown')}\n{result.get('content','')}" for result in search_results])
+        logger.info(msg="Web Search Successful. Synthesizing Curriculum")
+    except  Exception as e:
+        logger.warning(msg=f"Tavily search failed {e}. Proceeding with internal knowledge")
+        web_context="No live web data available. Relying on internal knowledge"
+
+    llm=ChatOpenAI(model='gpt-4o', temperature=0.2)
+    prompt=researcher_prompt(topic=state.topic, duration_months=state.duration_months, web_context=web_context)
+
+    response=await llm.ainvoke(prompt)
+    logger.info(msg="Research Complete. Up-to-date syllabus outline generated")
+
+    return {
+        "research_notes": response.content
     }
 
 async def schedule_architect(state: GraphState):
@@ -103,7 +137,7 @@ async def schedule_architect(state: GraphState):
     llm=ChatOpenAI(model="gpt-4o", temperature=0)
     structured_llm=llm.with_structured_output(schema=CurriculumPlan)
 
-    prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days)
+    prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days, research_notes=state.research_notes)
 
     logger.info(msg=f"Requesting exactly {total_study_days} topics from LLM...")
     
@@ -125,5 +159,6 @@ async def schedule_architect(state: GraphState):
     return {
         "full_schedule":skeleton_schedule,
         "current_target_date":first_study_date,
-        "day_number":1
+        "day_number":1, 
+        "total_study_days": total_study_days
     }
