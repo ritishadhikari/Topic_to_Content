@@ -1,13 +1,14 @@
 from typing import List, Annotated, Dict
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
-import logging
+import logging, json
 from helper_functions import (add_schedules, get_exact_end_date)
 from prompts import expert_curriculam_prompt, researcher_prompt
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from pydantic_schemas import CurriculumPlan
 from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 
 
 load_dotenv()
@@ -68,18 +69,28 @@ async def curriculum_researcher(state: GraphState):
     """
     logger.info(msg="---[RESEARCHING] GATHERING LIVE SYLLABUS DATA")
 
-    search_tool=TavilySearchResults(max_results=4, search_depth="advanced")
+    # search_tool=TavilySearchResults(max_results=4, search_depth="advanced")
     current_year=state.system_date.year
     search_query=f"Latest Comprehensive syllabus course outline topics for {state.topic} {current_year}"
     logger.info(msg=f"Executing Web Search: {search_query}")
 
     try:
-        search_results=await search_tool.ainvoke(input={"query":search_query})
-        web_context="\n\n".join([f"{result.get('url','Unknown')}\n{result.get('content','')}" for result in search_results])
-        logger.info(msg="Web Search Successful. Synthesizing Curriculum")
-    except  Exception as e:
-        logger.warning(msg=f"Tavily search failed {e}. Proceeding with internal knowledge")
-        web_context="No live web data available. Relying on internal knowledge"
+        logger.info(msg="Attempting Search with Brave API")
+        search_tool=BraveSearchWrapper()
+        search_results=json.loads(search_tool.run(search_query))
+        web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
+        logger.info(msg="Brave Web Search Successful")
+    except Exception as brave_err:
+        logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
+        try:  # fallback to Serper API
+            logger.info(msg="Falling Back to Serper API")
+            search_tool=GoogleSerperAPIWrapper(k=4)
+            search_results=search_tool.results(search_query).get("organic",[])
+            web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results])
+        except Exception as serper_err:
+            logger.warning(msg=f"Serper Search also failed. Error: {serper_err}")
+            web_context="No live web data available. Relying on internal knowledge"
+
 
     llm=ChatOpenAI(model='gpt-4o', temperature=0.2)
     prompt=researcher_prompt(topic=state.topic, duration_months=state.duration_months, web_context=web_context)

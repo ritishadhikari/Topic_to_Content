@@ -38,7 +38,7 @@ async def run_test():
     # Simulate a user requesting a 1-month course starting today
     initial_input = {
         "topic": "Computer Networking at an Intermediate Level",
-        "duration_months": 2, # Keep it to 2 months for a faster test run
+        "duration_months": 1, # Keep it to 2 months for a faster test run
         "off_days": ["sunday", "SATURDAY"], # Testing your capitalization sanitizer!
         "start_date": date.today() 
     }
