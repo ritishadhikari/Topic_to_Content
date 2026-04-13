@@ -3,10 +3,11 @@ from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
 import logging, json
 from helper_functions import (add_schedules, get_exact_end_date)
-from prompts import expert_curriculam_prompt, researcher_prompt
+from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
+                     code_presence_checker_prompt, syntax_checker_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from pydantic_schemas import CurriculumPlan
+from pydantic_schemas import CurriculumPlan, CodePresence, SyntaxReview
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 
@@ -174,3 +175,151 @@ async def schedule_architect(state: GraphState):
         "day_number":1, 
         "total_study_days": total_study_days
     }
+
+async def daily_content_researcher(state:GraphState):
+    """
+    Identify today's specific topic if it isn't set yet
+    """
+    todays_topic=state.current_topic
+    if todays_topic is None:
+        for day in state.full_schedule:
+            if day.get('day_number')==state.day_number:
+                todays_topic=day.get('topic_metadata')
+                break
+    
+    logger.info(msg=f"--- [DAILY RESEARCH] FETCHING CONTEXT FOR DAY {state.day_number}: {todays_topic}")
+
+    search_query=f"{todays_topic} in {state.topic} tutorial examples latest"
+
+    try:
+        logger.info(msg="Attempting Search with Brave API for Content Generation")
+        search_tool=BraveSearchWrapper()
+        search_results=json.loads(search_tool.run(search_query))
+        web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
+        logger.info(msg="Brave Web Search Successful")
+    except Exception as brave_err:
+        logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
+        try:  # fallback to Serper API
+            logger.info(msg="Falling Back to Serper API")
+            search_tool=GoogleSerperAPIWrapper(k=4)
+            search_results=search_tool.results(search_query).get("organic",[])
+            web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results])
+        except Exception as serper_err:
+            logger.warning(msg=f"Serper Search also failed. Error: {serper_err}")
+            web_context="No live web data available. Relying on internal knowledge"
+        
+    return {
+        "current_topic": todays_topic,
+        "daily_web_context": web_context
+    }
+    
+async def daily_content_generator(state: GraphState):
+    """
+    Takes the gathered web context and writes the actual educational lesson.
+    """
+    logger.info(msg=f"--- [DAILY GENERATOR] WRITING LESSON FOR DAY {state.day_number} ---")
+    
+    llm=ChatOpenAI(model="gpt-4o", temperature=0.3)
+    
+    daily_prompt=daily_content_prompt(
+        course_topic=state.topic,
+        daily_topic=state.current_topic,
+        web_context=state.daily_web_context
+        )
+    
+    response=await llm.ainvoke(input=daily_prompt)
+    logger.info(msg=f"Lesson for Day {state.day_number} successfully generated!")
+
+    return {
+        "latest_content":response.content
+
+    }
+
+
+
+async def code_presence_checker(state: GraphState):
+    """
+    Analyzes the daily content to determine if it contains any code blocks.
+    Updates the state.has_code boolean for the router
+    """
+    logger.info(msg=f"---[QA] CHECKING FOR CODE IN DAY {state.day_number} CONTENT")
+
+    llm=ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    structured_llm=llm.with_structured_output(schema=CodePresence)
+    code_presence_prompt=code_presence_checker_prompt(content=state.latest_content)
+    result= await structured_llm.ainvoke(input=code_presence_prompt)
+    logger.info(msg=f"Code found in lesson: {result.has_code}")
+
+    return {
+        "has_code": result.has_code
+    }
+
+async def code_syntax_checker(state: GraphState):
+    """
+    If code is present, this node reviews it for syntax errors, best practices and relevancy.
+    If it finds errors or irrelavant code, it fixes them and updates the lesson content.
+    """
+    logger.info(msg="---[QA] VALIDATING CODE SYNTAX & RELEVANCY")
+
+    llm=ChatOpenAI(model='gpt-4o', temperature=0)
+    structured_llm=llm.with_structured_output(schema=SyntaxReview)
+    syntax_prompt=syntax_checker_prompt(
+        latest_content=state.latest_content,
+        course_topic=state.topic,
+        daily_topic=state.current_topic
+        )
+    review=await structured_llm.ainvoke(input=syntax_prompt)
+    if review.is_valid:
+        logger.info(msg="Code Syntax is perfectly valid and relevant. No changes needed")
+        return {}
+    else:
+        logger.warning(msg="Syntax or relevancy errors detected! Applying corrections to the lesson")
+        return {
+            "latest_content": review.corrected_content
+        }
+    
+def route_after_code_check(state:GraphState):
+    """
+    Reads the state.has_code boolean and returns the name of the next node
+    """
+    if state.has_code:  return "code_syntax_checker"
+    else: return "pedagogical_validator"
+
+
+# Add this to the bottom of head.py
+
+async def state_save(state: GraphState):
+    """
+    Saves the finalized daily content into the master schedule dictionary
+    and appends the text to a local .txt file for easy reading.
+    """
+    logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
+    
+    # 1. Write the content to a local .txt file
+    # We replace spaces in the topic name with underscores for a clean filename
+    filename = f"{state.topic.replace(' ', '_')}_Course.txt"
+    
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"DAY {state.day_number}: {state.current_topic}\n")
+        f.write(f"{'='*60}\n\n")
+        if state.latest_content:
+            f.write(state.latest_content)
+            
+    logger.info(msg=f"Content successfully appended to {filename}")
+
+    # 2. Update the master schedule in the LangGraph State
+    updated_day = None
+    for day in state.full_schedule:
+        if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
+            updated_day = day.copy()
+            # Inject the final content into the dictionary without overwriting the topic_metadata
+            updated_day["final_lesson_content"] = state.latest_content
+            break
+            
+    if updated_day:
+        # Returning this 1-item list triggers the add_schedules reducer 
+        # to safely merge this update into the master calendar!
+        return {"full_schedule": [updated_day]}
+        
+    return {}

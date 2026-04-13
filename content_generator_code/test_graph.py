@@ -2,77 +2,134 @@ import asyncio
 from datetime import date
 from langgraph.graph import StateGraph, START, END
 
-# Import the state and our THREE nodes from your head.py file
-from head import GraphState, input_processor, curriculum_researcher, schedule_architect
+# Import the state and nodes from head.py
+from head import (
+    GraphState, 
+    input_processor, 
+    curriculum_researcher, 
+    schedule_architect,
+    daily_content_researcher,
+    daily_content_generator,
+    code_presence_checker,
+    code_syntax_checker,
+    route_after_code_check,
+    state_save 
+)
 
 # ==========================================
-# 1. GRAPH CONSTRUCTION
+# 1. LOOP MANAGEMENT (NEW)
 # ==========================================
 
-# Initialize the StateGraph with our Pydantic BaseModel
+async def loop_incrementer(state: GraphState):
+    """
+    Increments the day counter and resets the daily variables 
+    so the next iteration of the loop starts fresh.
+    """
+    print(f"\n--- [LOOPING] MOVING TO DAY {state.day_number + 1} ---")
+    return {
+        "day_number": state.day_number + 1,
+        "current_topic": None,        # Reset so researcher finds the next topic
+        "daily_web_context": None,    # Clear old web context
+        "latest_content": None,       # Clear old lesson text
+        "has_code": False             # Reset code detection
+    }
+
+def loop_router(state: GraphState):
+    """
+    Checks if we have reached our 5-day limit.
+    If yes -> END. If no -> loop back to the researcher.
+    """
+    # We check > 5 because we want Day 5 to fully complete its save process first.
+    if state.day_number > 5 or state.day_number > state.total_study_days:
+        return END
+    return "daily_content_researcher"
+
+
+# ==========================================
+# 2. GRAPH CONSTRUCTION
+# ==========================================
+
 workflow = StateGraph(GraphState)
 
-# Add our three completed nodes
+# Add all the nodes
 workflow.add_node("input_processor", input_processor)
-workflow.add_node("curriculum_researcher", curriculum_researcher) # Added new node
+workflow.add_node("curriculum_researcher", curriculum_researcher) 
 workflow.add_node("schedule_architect", schedule_architect)
+workflow.add_node("daily_content_researcher", daily_content_researcher)
+workflow.add_node("daily_content_generator", daily_content_generator)
+workflow.add_node("code_presence_checker", code_presence_checker)
+workflow.add_node("code_syntax_checker", code_syntax_checker)
+workflow.add_node("state_save", state_save) 
+workflow.add_node("loop_incrementer", loop_incrementer) # <-- Added Incrementer Node
 
-# Define the flow (Edges)
+# Define the standard linear edges
 workflow.add_edge(START, "input_processor")
-workflow.add_edge("input_processor", "curriculum_researcher")     # Edge updated
-workflow.add_edge("curriculum_researcher", "schedule_architect")  # Edge updated
-workflow.add_edge("schedule_architect", END) 
+workflow.add_edge("input_processor", "curriculum_researcher")
+workflow.add_edge("curriculum_researcher", "schedule_architect")
+
+# Enter the daily loop for Day 1
+workflow.add_edge("schedule_architect", "daily_content_researcher") 
+workflow.add_edge("daily_content_researcher", "daily_content_generator")
+workflow.add_edge("daily_content_generator", "code_presence_checker")
+
+# Code QA Routing
+workflow.add_conditional_edges(
+    "code_presence_checker",
+    route_after_code_check,
+    {
+        "code_syntax_checker": "code_syntax_checker",
+        "pedagogical_validator": "state_save"  # Still bypassing validator temporarily
+    }
+)
+
+# Connect both QA paths to the save node
+workflow.add_edge("code_syntax_checker", "state_save")
+
+# AFTER saving, go to the incrementer instead of END
+workflow.add_edge("state_save", "loop_incrementer")
+
+# The final loop condition! Back to the top of the loop or END.
+workflow.add_conditional_edges(
+    "loop_incrementer",
+    loop_router,
+    {
+        "daily_content_researcher": "daily_content_researcher",
+        END: END
+    }
+)
 
 # Compile the application
 app = workflow.compile()
 
 # ==========================================
-# 2. ASYNC TEST RUNNER
+# 3. ASYNC TEST RUNNER
 # ==========================================
 
 async def run_test():
     print("\n" + "="*50)
-    print("🚀 STARTING LANGGRAPH CHECKPOINT TEST")
+    print("🚀 STARTING LANGGRAPH 5-DAY LOOP TEST")
     print("="*50 + "\n")
     
-    # Simulate a user requesting a 1-month course starting today
+    # Highly technical advanced engineering query!
     initial_input = {
-        "topic": "Computer Networking at an Intermediate Level",
-        "duration_months": 1, # Keep it to 2 months for a faster test run
-        "off_days": ["sunday", "SATURDAY"], # Testing your capitalization sanitizer!
+        "topic": "MCP servers and Integration with Langgraph and Fast API", 
+        "duration_months": 1, 
+        "off_days": ["sunday", "SATURDAY"], 
         "start_date": date.today() 
     }
     
     try:
-        # Execute the graph asynchronously 
         final_state = await app.ainvoke(initial_input)
         
         print("\n" + "="*50)
-        print("✅ TEST COMPLETED SUCCESSFULLY")
+        print("✅ 5-DAY TEST COMPLETED SUCCESSFULLY")
         print("="*50)
         
-        # Verify the State Outputs
-        print(f"\n[STATE CHECK] First Target Date: {final_state['current_target_date']}")
-        print(f"[STATE CHECK] Total Calendar Days Generated: {len(final_state['full_schedule'])}")
-        print(f"[STATE CHECK] Total Exact Study Days: {final_state['total_study_days']}")
+        filename = f"{initial_input['topic'].replace(' ', '_')}_Course.txt"
+        print(f"\n[SUCCESS] The first 5 lessons have been sequentially written to: {filename}")
         
-        # Verify Research was captured
-        has_research = bool(final_state.get('research_notes'))
-        print(f"[STATE CHECK] Research Notes Populated: {has_research}")
-        
-        print("\n[PREVIEW] First 5 Days of the Master Schedule:")
-        for day in final_state['full_schedule']:
-            # Formatting the output nicely
-            day_str = f"Date: {day['date']} | Type: {day['type']:<9} | "
-            if day['type'] == 'STUDY_DAY':
-                day_str += f"Day #{day['day_number']:<2} | Topic: {day['topic_metadata']}"
-            else:
-                day_str += f"Day: {day['day_name']}"
-            print(day_str)
-            
     except Exception as e:
         print(f"\n❌ ERROR DURING EXECUTION: {e}")
 
-# Run the async event loop
 if __name__ == "__main__":
     asyncio.run(run_test())

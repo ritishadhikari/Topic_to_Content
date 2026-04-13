@@ -33,3 +33,44 @@ def researcher_prompt(topic: str, duration_months: int, web_context: str):
     This outline will be used by a schedule architect to build a daily study plan. 
     Output a detailed, structured text outline. 
 """
+
+def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str):
+    return f"""
+    You are an expert technical instructor teaching a course on {course_topic}
+    Your task is to write a comprehensive, engaging daily lesson for today's specific sub-topic: {daily_topic}
+
+    Here is the latest web research, documentation and technical context gathered for this specific topic:
+    <web_research>
+    {web_context}
+    </web_research>
+
+    Instructions:
+    1. Write a clear, beginner-friendly introduction to the concept
+    2. Explain the core mechanics using the web search provided 
+    3. Include practical examples, analogies and strictly accurate code snippets (if applicable)
+    4. Keep the tone encouraging and highly educational
+    5. Do not write a generic summary; write an actual, deep-dive textbook-style lesson.
+    """
+
+def code_presence_checker_prompt(content: str):
+    return f"""
+    Does the following lesson content contain any executable code blocks, CLI commands, or programming syntax?
+    {content}
+    """
+
+def syntax_checker_prompt(latest_content: str, course_topic: str, daily_topic: str ):
+    return f"""
+    You are an expert Senior Software Engineer and Code Reviewer.
+    Review the following educational lesson for the course {course_topic} specially focussing on the sub-topic {daily_topic}
+    It contains code snippets
+
+    <lesson>
+    {latest_content}
+    </lesson>
+
+    Your Tasks:
+    1. Check every code block for syntax error, deprecations, or bad practices.
+    2. Ensure the code is highly relevant to {daily_topic} and perfectly matches the explanations given in the text.
+    3. If the code is perfect and contextually accurate, set 'is_valid' to True and return the original text.
+    4. If there are syntax errors OR if the code is irrelevant/out-of-scope for the topic, fix it, set 'is_valid' to False and output the fully corrected lesson text.
+    """
