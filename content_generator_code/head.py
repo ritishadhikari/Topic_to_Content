@@ -318,38 +318,38 @@ async def pedagogical_validator(state: GraphState):
 
 # Add this to the bottom of head.py
 
-async def state_save(state: GraphState):
-    """
-    Saves the finalized daily content into the master schedule dictionary
-    and appends the text to a local .txt file for easy reading.
-    """
-    logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
+# async def state_save(state: GraphState):
+#     """
+#     Saves the finalized daily content into the master schedule dictionary
+#     and appends the text to a local .txt file for easy reading.
+#     """
+#     logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
     
-    # 1. Write the content to a local .txt file
-    # We replace spaces in the topic name with underscores for a clean filename
-    filename = f"{state.topic.replace(' ', '_')}_Course.txt"
+#     # 1. Write the content to a local .txt file
+#     # We replace spaces in the topic name with underscores for a clean filename
+#     filename = f"{state.topic.replace(' ', '_')}_Course.txt"
     
-    with open(filename, "a", encoding="utf-8") as f:
-        f.write(f"\n\n{'='*60}\n")
-        f.write(f"DAY {state.day_number}: {state.current_topic}\n")
-        f.write(f"{'='*60}\n\n")
-        if state.latest_content:
-            f.write(state.latest_content)
+#     with open(filename, "a", encoding="utf-8") as f:
+#         f.write(f"\n\n{'='*60}\n")
+#         f.write(f"DAY {state.day_number}: {state.current_topic}\n")
+#         f.write(f"{'='*60}\n\n")
+#         if state.latest_content:
+#             f.write(state.latest_content)
             
-    logger.info(msg=f"Content successfully appended to {filename}")
+#     logger.info(msg=f"Content successfully appended to {filename}")
 
-    # 2. Update the master schedule in the LangGraph State
-    updated_day = None
-    for day in state.full_schedule:
-        if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
-            updated_day = day.copy()
-            # Inject the final content into the dictionary without overwriting the topic_metadata
-            updated_day["final_lesson_content"] = state.latest_content
-            break
+#     # 2. Update the master schedule in the LangGraph State
+#     updated_day = None
+#     for day in state.full_schedule:
+#         if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
+#             updated_day = day.copy()
+#             # Inject the final content into the dictionary without overwriting the topic_metadata
+#             updated_day["final_lesson_content"] = state.latest_content
+#             break
             
-    if updated_day:
-        # Returning this 1-item list triggers the add_schedules reducer 
-        # to safely merge this update into the master calendar!
-        return {"full_schedule": [updated_day]}
+#     if updated_day:
+#         # Returning this 1-item list triggers the add_schedules reducer 
+#         # to safely merge this update into the master calendar!
+#         return {"full_schedule": [updated_day]}
         
-    return {}
+#     return {}
