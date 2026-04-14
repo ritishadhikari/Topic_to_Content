@@ -4,12 +4,13 @@ from pydantic import BaseModel, Field
 import logging, json
 from helper_functions import (add_schedules, get_exact_end_date)
 from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
-                     code_presence_checker_prompt, syntax_checker_prompt)
+                     code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from pydantic_schemas import CurriculumPlan, CodePresence, SyntaxReview
+from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
+
 
 
 load_dotenv()
@@ -278,7 +279,7 @@ async def code_syntax_checker(state: GraphState):
             "latest_content": review.corrected_content
         }
     
-def route_after_code_check(state:GraphState):
+async def route_after_code_check(state:GraphState):
     """
     Reads the state.has_code boolean and returns the name of the next node
     """
@@ -286,40 +287,69 @@ def route_after_code_check(state:GraphState):
     else: return "pedagogical_validator"
 
 
-# # Add this to the bottom of head.py
+async def pedagogical_validator(state: GraphState):
+    """
+    Acts as Editor-in-Cheif. Ensures the text is easy to grasp, uses analogies and maintains a high pedagocical standard befire saving.
+    """
+    logger.info(msg="--- [QA] PEDAGOGICAL VALIDATION (EDITIOR-IN-CHIEF) ---")
+    llm=ChatOpenAI(model='gpt-4o', temperature=0.4)
+    structured_llm=llm.with_structured_output(schema=PedagogicalReview)
 
-# async def state_save(state: GraphState):
-#     """
-#     Saves the finalized daily content into the master schedule dictionary
-#     and appends the text to a local .txt file for easy reading.
-#     """
-#     logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
-    
-#     # 1. Write the content to a local .txt file
-#     # We replace spaces in the topic name with underscores for a clean filename
-#     filename = f"{state.topic.replace(' ', '_')}_Course.txt"
-    
-#     with open(filename, "a", encoding="utf-8") as f:
-#         f.write(f"\n\n{'='*60}\n")
-#         f.write(f"DAY {state.day_number}: {state.current_topic}\n")
-#         f.write(f"{'='*60}\n\n")
-#         if state.latest_content:
-#             f.write(state.latest_content)
-            
-#     logger.info(msg=f"Content successfully appended to {filename}")
+    pedagogical_prompt=pedagogical_validator_prompt(
+        course_topic=state.topic,
+        daily_topic=state.current_topic,
+        lesson_content=state.latest_content,
+        web_context=state.daily_web_context
+    )
 
-#     # 2. Update the master schedule in the LangGraph State
-#     updated_day = None
-#     for day in state.full_schedule:
-#         if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
-#             updated_day = day.copy()
-#             # Inject the final content into the dictionary without overwriting the topic_metadata
-#             updated_day["final_lesson_content"] = state.latest_content
-#             break
+    review=await structured_llm.ainvoke(input=pedagogical_prompt)
+
+    if review.is_pedagogically_sound:
+        logger.info(msg="Pedagocical check passed: Content is engaging and easy to grasp.")
+        return {}
+    else:
+        logger.info(msg=f'Pedagocical improvements applied. Editor Feedback: {review.feedback}')
+        return {
+            'latest_content': review.revised_content
+        }
+
+
+
+
+# Add this to the bottom of head.py
+
+async def state_save(state: GraphState):
+    """
+    Saves the finalized daily content into the master schedule dictionary
+    and appends the text to a local .txt file for easy reading.
+    """
+    logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
+    
+    # 1. Write the content to a local .txt file
+    # We replace spaces in the topic name with underscores for a clean filename
+    filename = f"{state.topic.replace(' ', '_')}_Course.txt"
+    
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"DAY {state.day_number}: {state.current_topic}\n")
+        f.write(f"{'='*60}\n\n")
+        if state.latest_content:
+            f.write(state.latest_content)
             
-#     if updated_day:
-#         # Returning this 1-item list triggers the add_schedules reducer 
-#         # to safely merge this update into the master calendar!
-#         return {"full_schedule": [updated_day]}
+    logger.info(msg=f"Content successfully appended to {filename}")
+
+    # 2. Update the master schedule in the LangGraph State
+    updated_day = None
+    for day in state.full_schedule:
+        if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
+            updated_day = day.copy()
+            # Inject the final content into the dictionary without overwriting the topic_metadata
+            updated_day["final_lesson_content"] = state.latest_content
+            break
+            
+    if updated_day:
+        # Returning this 1-item list triggers the add_schedules reducer 
+        # to safely merge this update into the master calendar!
+        return {"full_schedule": [updated_day]}
         
-#     return {}
+    return {}

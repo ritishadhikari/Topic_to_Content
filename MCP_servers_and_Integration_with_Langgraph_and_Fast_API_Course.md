@@ -412,3 +412,469 @@ In real-world applications, A2A is used in various domains, such as healthcare, 
 ## Conclusion
 
 The A2A protocol is a pivotal development in the field of AI, enabling seamless communication and collaboration between agents. By understanding and implementing A2A, developers can create sophisticated, multi-agent systems capable of tackling complex challenges. As you continue to explore AI agent development, consider how A2A can enhance your projects and drive innovation in your field. Keep experimenting, and don't hesitate to reach out with questions or for further guidance. Happy coding!
+
+============================================================
+DAY 1: Introduction to Model Context Protocol (MCP)
+============================================================
+
+# Lesson: Introduction to Model Context Protocol (MCP)
+
+## Introduction
+
+Welcome to today's lesson on the Model Context Protocol (MCP), a revolutionary framework designed to enhance the integration between Language Model (LLM) applications and external data sources or tools. Think of MCP as a universal translator for AI applications, allowing them to "speak" with various external systems effortlessly. As AI and machine learning continue to evolve, MCP stands out as a pivotal protocol that facilitates seamless communication and operation between AI-driven applications and the myriad of external systems they interact with. Whether you're a developer, data scientist, or AI enthusiast, understanding MCP will empower you to create more robust, scalable, and efficient AI applications.
+
+## Core Mechanics of MCP
+
+### What is MCP?
+
+At its core, the Model Context Protocol (MCP) is an open protocol that enables seamless integration between LLM applications and external data sources and tools. Imagine MCP as a bridge connecting different islands (systems), allowing them to communicate effectively and enhancing the capabilities of AI applications. MCP servers operate independently, like separate islands, ensuring modularity and scalability by not having direct access to the runtime information of LangGraph, such as the store, context, or agent state.
+
+### Key Components of MCP
+
+1. **Interceptors**: These act like interpreters, bridging the communication gap between MCP servers and the LangGraph runtime context. They provide access to runtime information during MCP tool execution, ensuring that the necessary context is available when needed.
+
+2. **Prompts**: MCP servers can expose reusable prompt templates, akin to pre-written scripts for actors. LangChain converts these prompts into messages, making them easy to integrate into chat-based workflows, perfect for creating dynamic and interactive AI applications.
+
+3. **Tools**: MCP servers can expose executable functions, known as tools, that LLMs can invoke to perform specific actions. These actions can include querying databases, calling APIs, or interacting with external systems, allowing for a high degree of automation and functionality within AI applications.
+
+4. **Resources**: MCP servers can also expose data, such as files, database records, or API responses, which can be accessed by clients. This feature is crucial for applications that require real-time data access and manipulation.
+
+### Practical Example: Creating a Simple MCP Server
+
+Let's dive into a practical example to solidify our understanding. We'll create a simple MCP server that performs basic arithmetic operations—addition and multiplication.
+
+```python
+# math_server.py
+from mcp.server.fastmcp import FastMCP
+
+# Initialize the MCP server with a name
+mcp = FastMCP("Math")
+
+# Define a tool for addition
+@mcp.tool()
+def add(a: int, b: int) -> int:
+    """Add two numbers"""
+    return a + b
+
+# Define a tool for multiplication
+@mcp.tool()
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers"""
+    return a * b
+
+# Run the MCP server using standard input/output transport
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+```
+
+In this example, we use the `FastMCP` framework to create a server named "Math." We define two tools, `add` and `multiply`, which perform basic arithmetic operations. The server is then run using standard input/output transport, making it accessible for integration with other systems.
+
+### Integration with LangGraph
+
+To integrate MCP tools with LangGraph, we can use the `langchain-mcp-adapters` library. This library provides a lightweight wrapper that makes MCP tools compatible with LangChain and LangGraph.
+
+```python
+# graph.py
+from contextlib import asynccontextmanager
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain.agents import create_agent
+
+async def make_graph():
+    client = MultiServerMCPClient({
+        "math": {
+            "url": "http://localhost:8000/mcp",
+            "transport": "http",
+        }
+    })
+    # Further setup for LangGraph agent
+```
+
+In this setup, we create a `MultiServerMCPClient` to connect to our MCP server. This client allows us to load tools from multiple MCP servers, facilitating complex integrations and workflows.
+
+## Conclusion
+
+The Model Context Protocol (MCP) is a powerful tool for integrating AI applications with external systems. By understanding its core mechanics and components, you can leverage MCP to build more dynamic, scalable, and efficient AI solutions. As you continue to explore MCP, remember that its true potential lies in its ability to bridge the gap between AI models and the diverse ecosystem of tools and data sources they interact with.
+
+Feel free to experiment with the code snippets provided and explore further integration possibilities with LangGraph and FastAPI. Happy coding!
+
+============================================================
+DAY 2: Historical Context and Evolution of MCP
+============================================================
+
+# Lesson: Historical Context and Evolution of MCP
+
+## Introduction to MCP
+
+Welcome to today's lesson on the Historical Context and Evolution of the Model Context Protocol (MCP). In this session, we'll explore how MCP has become a cornerstone in modern AI frameworks, especially in its integration with LangGraph and FastAPI. MCP acts as a bridge between AI agents and servers, enabling smooth communication and interaction across various systems. This protocol has evolved to streamline complex workflows and enhance the capabilities of AI-driven applications.
+
+## Understanding MCP: Core Mechanics
+
+### What is MCP?
+
+MCP, or Model Context Protocol, is a communication protocol designed to facilitate interaction between AI agents and servers. It allows for the exchange of structured and standardized requests, thereby eliminating the need for custom API integrations. This is particularly useful in distributed AI setups where multiple servers and agents need to coordinate seamlessly.
+
+### How Does MCP Work?
+
+MCP operates by running servers as separate processes. These servers, however, cannot directly access the runtime information of LangGraph, such as the store, context, or agent state. To bridge this gap, MCP uses interceptors, which provide access to runtime context during tool execution. This ensures that MCP servers can interact with LangGraph agents effectively.
+
+#### Key Components of MCP:
+
+1. **Interceptors**: These are crucial for accessing runtime context, allowing MCP tools to function within the LangGraph environment.
+   
+2. **Prompts**: MCP servers can expose reusable prompt templates, which LangChain converts into messages for easy integration into chat-based workflows.
+
+3. **Tools**: These are executable functions exposed by MCP servers, which can be invoked by Language Learning Models (LLMs) to perform actions like querying databases or calling APIs.
+
+4. **Resources**: MCP servers can expose data such as files or database records, which clients can read.
+
+### Integration with LangGraph and FastAPI
+
+LangGraph and FastAPI are integral to the functioning of MCP. LangGraph provides a framework for creating agents that can utilize MCP tools, while FastAPI offers a robust platform for building APIs that facilitate communication between these agents and MCP servers.
+
+#### Example Setup:
+
+To illustrate how MCP integrates with LangGraph, consider the following setup for running a LangGraph agent using MCP tools:
+
+```python
+# graph.py
+from contextlib import asynccontextmanager
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain.agents import create_agent
+
+async def make_graph():
+    client = MultiServerMCPClient({
+        "weather": {
+            "url": "http://localhost:8000/mcp",
+            "transport": "http",
+        },
+    })
+    agent = create_agent(client)
+    # Further agent setup and execution
+```
+
+In this example, we create a `MultiServerMCPClient` to connect to multiple MCP servers, allowing the LangGraph agent to utilize the tools provided by these servers.
+
+## Practical Examples and Analogies
+
+### Example: Math Server
+
+Let's consider a practical example where we create an MCP server that performs basic arithmetic operations:
+
+```python
+# math_server.py
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("Math")
+
+@mcp.tool()
+def add(a: int, b: int) -> int:
+    """Add two numbers"""
+    return a + b
+
+@mcp.tool()
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers"""
+    return a * b
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+```
+
+In this example, we define two tools: `add` and `multiply`. These tools can be invoked by LangGraph agents to perform arithmetic operations, demonstrating how MCP servers expose executable functions.
+
+### Analogy: MCP as a Universal Translator
+
+Think of MCP as a universal translator in a multilingual conference. Each participant (AI agent) speaks a different language (protocol), but the translator (MCP) ensures everyone understands each other by converting messages into a common language. This analogy highlights MCP's role in facilitating communication between diverse systems.
+
+## Conclusion
+
+The evolution of MCP has been instrumental in advancing AI frameworks, particularly in its integration with LangGraph and FastAPI. By providing a standardized protocol for communication, MCP simplifies the management of complex workflows and enhances the capabilities of AI-driven applications. As you continue to explore MCP, consider how its components and integrations can be leveraged to build more efficient and scalable AI solutions.
+
+Remember, the journey of mastering MCP is ongoing, and each step you take brings you closer to becoming proficient in this transformative technology. Keep experimenting, keep learning, and most importantly, keep innovating!
+
+============================================================
+DAY 3: Core Concepts: MCP Clients and Servers
+============================================================
+
+# Lesson: Core Concepts: MCP Clients and Servers
+
+## Introduction
+
+Welcome to today's lesson on the core concepts of MCP (Model Context Protocol) Clients and Servers. Imagine MCP as a universal translator for your applications, enabling them to "speak" with different tools and services without needing to hardcode each interaction. This flexibility is crucial in today's fast-paced development environment, where adaptability and integration are key.
+
+MCP acts as a bridge between various computational tools and your applications, enabling seamless integration and communication. When used with LangGraph and FastAPI, MCP allows developers to create sophisticated agents that can interact with numerous services and tools.
+
+## Core Mechanics of MCP Clients and Servers
+
+### What is MCP?
+
+MCP, or Model Context Protocol, is a framework designed to facilitate communication between different computational tools and applications. It abstracts the complexity of integrating various services, allowing developers to focus on building functionality rather than managing integrations.
+
+### MCP Servers
+
+An MCP server acts as a host for various tools and services. Instead of embedding each tool directly into your application, you expose them through an MCP server. This server can host anything from simple calculators to complex APIs, cloud functions, or file systems.
+
+**Example: Creating an MCP Server**
+
+Let's create a simple MCP server using FastMCP, which is a streamlined way to build MCP servers with minimal code.
+
+```python
+# math_server.py
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("Math")
+
+@mcp.tool()
+def add(a: int, b: int) -> int:
+    """Add two numbers"""
+    return a + b
+
+@mcp.tool()
+def multiply(a: int, b: int) -> int:
+    """Multiply two numbers"""
+    return a * b
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")
+```
+
+In this example, we've created a simple MCP server that provides two tools: `add` and `multiply`. These tools can be accessed by any MCP client that connects to this server.
+
+### MCP Clients
+
+An MCP client is responsible for connecting to MCP servers and utilizing the tools they offer. The client acts as a middleman, allowing your application to interact with the tools hosted on the server.
+
+**Example: Connecting an MCP Client**
+
+Here’s how you can set up an MCP client to connect to the server we just created:
+
+```python
+# client.py
+import asyncio
+from mcp.client.stdio import stdio_client
+from mcp import StdioServerParameters
+
+# Define server parameters
+server_params = StdioServerParameters(
+    command="python",
+    args=["path/to/your/math_server.py"],  # Update with the correct path
+)
+
+async def run_agent():
+    async with stdio_client(server_params) as client:
+        result_add = await client.call('add', a=5, b=3)
+        result_multiply = await client.call('multiply', a=5, b=3)
+        print(f"Addition Result: {result_add}")
+        print(f"Multiplication Result: {result_multiply}")
+
+asyncio.run(run_agent())
+```
+
+In this client setup, we're using `stdio_client` to connect to our MCP server. We then call the `add` and `multiply` tools, demonstrating how the client can interact with the server's functionalities.
+
+### Integration with LangGraph and FastAPI
+
+LangGraph and FastAPI are powerful frameworks that enhance the capabilities of MCP by providing additional abstraction layers and integration features. LangGraph, for instance, allows you to create agents that can intelligently select and use tools based on user input, while FastAPI simplifies the creation of HTTP-based MCP servers.
+
+**Example: Using LangGraph with MCP**
+
+```python
+# graph.py
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain.agents import create_agent
+
+async def make_graph():
+    client = MultiServerMCPClient({
+        "math": {
+            "url": "http://localhost:8000/mcp",
+            "transport": "http",
+        },
+    })
+    agent = create_agent(client)
+    # The agent can now use the math tools provided by the MCP server
+```
+
+In this setup, we configure a LangGraph agent to connect to an MCP server. The agent can then intelligently decide which tools to use based on the task at hand.
+
+## Conclusion
+
+Understanding MCP clients and servers is crucial for building flexible and scalable applications. By abstracting the complexity of tool integration, MCP allows developers to focus on creating value and functionality. As you continue to explore MCP, LangGraph, and FastAPI, you'll find that these tools open up a world of possibilities for building sophisticated, integrated applications.
+
+Remember, the key to mastering MCP is experimentation and practice. Don't hesitate to create your own MCP servers and clients, and explore the vast array of tools and services you can integrate into your applications. Happy coding! 
+
+This lesson should now be more engaging and easier to digest, with clear explanations and relatable analogies to enhance understanding.
+
+============================================================
+DAY 4: Agent-to-Agent Protocol (A2A) Overview
+============================================================
+
+# Lesson: Agent-to-Agent Protocol (A2A) Overview
+
+## Introduction
+
+Welcome to today's lesson on the Agent-to-Agent Protocol (A2A), a cornerstone in the dynamic world of AI agent communication. Picture a universe where AI agents collaborate seamlessly, irrespective of the frameworks or languages they are built on. This is the promise of A2A, an open standard designed to facilitate effective communication and collaboration among AI agents. Whether you're developing a simple chatbot or a complex multi-agent system, understanding A2A is crucial for creating robust, interoperable AI solutions.
+
+## Core Mechanics of A2A
+
+### What is A2A?
+
+The Agent-to-Agent Protocol (A2A) is an open standard that enables seamless communication between AI agents. It allows agents to delegate tasks, exchange information, and coordinate actions without needing to share internal memory, tools, or proprietary logic. This ensures security and preserves intellectual property while enabling powerful, composite AI systems.
+
+### Key Features
+
+1. **Interoperability**: A2A allows agents built on different platforms, like LangGraph, CrewAI, and custom solutions, to communicate effortlessly. Think of it as a universal translator for AI agents, enabling them to "speak" the same language.
+
+2. **Task Delegation**: Agents can delegate sub-tasks to other agents, enabling collaborative problem-solving. Imagine a research agent delegating a coding task to a specialized coding agent, much like a project manager assigning tasks to team members.
+
+3. **Security and Privacy**: By not requiring agents to share internal logic, A2A ensures that sensitive information remains secure. This is akin to two companies collaborating on a project without revealing their trade secrets.
+
+4. **Complementary to MCP**: While A2A handles agent-to-agent communication, the Model Context Protocol (MCP) standardizes how an agent connects to its tools and resources. Together, they form a robust framework for building agentic applications.
+
+### How A2A Works
+
+A2A operates on a message-based state structure, where agents communicate by sending JSON-RPC messages to each other's endpoints. This structure allows agents to maintain conversational state and process incoming messages effectively.
+
+Consider this analogy: Imagine two people playing a game of chess by sending moves to each other via text messages. Each message contains the move, and both players update their board accordingly. Similarly, A2A agents exchange messages to perform tasks and update their internal states.
+
+## Practical Examples
+
+### Example 1: LangGraph A2A Conversational Agent
+
+Let's explore a basic example of an A2A-compatible agent using LangGraph. This agent processes incoming messages using OpenAI's API and maintains a conversational state.
+
+```python
+from langgraph.graph import StateGraph
+from langgraph.runtime import Runtime
+from openai import AsyncOpenAI
+from typing import TypedDict
+from dataclasses import dataclass
+
+class Context(TypedDict):
+    """Context parameters for the agent."""
+    my_configurable_param: str
+
+@dataclass
+class State:
+    """Input state for the agent. Defines the initial structure for A2A conversational messages."""
+    user_message: str
+    agent_response: str = ""
+
+# Initialize the agent
+agent = AsyncOpenAI(api_key="your_api_key")
+
+# Define a simple message handler
+def handle_message(state: State, context: Context):
+    response = agent.complete(state.user_message)
+    state.agent_response = response
+
+# Example usage
+state = State(user_message="Hello, how can I help you?")
+context = Context(my_configurable_param="example_param")
+handle_message(state, context)
+print(state.agent_response)
+```
+
+### Example 2: Deploying A2A Agents on Cloud Run
+
+In this example, we'll deploy two agents using different frameworks (CrewAI and LangGraph) on Cloud Run. Despite their differences, they can communicate using A2A.
+
+1. **Burger Agent**: Powered by CrewAI, this agent handles burger orders.
+2. **Pizza Agent**: Powered by LangGraph, this agent handles pizza orders.
+
+Both agents are deployed as services on Cloud Run, configured to communicate via A2A endpoints. This setup allows them to collaborate on fulfilling a customer's order without sharing their internal logic.
+
+## Conclusion
+
+The Agent-to-Agent Protocol (A2A) is a powerful tool for enabling seamless communication and collaboration between AI agents. By understanding its core mechanics and practical applications, you can build more robust and interoperable AI systems. As you continue to explore the world of AI, remember that A2A is your gateway to creating intelligent, collaborative solutions that transcend individual agent capabilities. Keep experimenting, and let your creativity guide you in leveraging A2A to its fullest potential!
+
+============================================================
+DAY 5: Setting Up Your Development Environment: Tools and Technologies
+============================================================
+
+# Lesson: Setting Up Your Development Environment: Tools and Technologies for MCP Servers and Integration with LangGraph and FastAPI
+
+## Introduction
+
+Welcome to today's lesson on setting up your development environment for MCP (Model Context Protocol) servers and integrating them with LangGraph and FastAPI. This lesson will guide you in creating a robust infrastructure that allows your AI agents to interact seamlessly with various tools and technologies. By the end, you'll be equipped to build sophisticated applications that leverage multiple APIs and services without hardcoding each integration.
+
+## Understanding MCP Servers and LangGraph
+
+Imagine MCP servers as a versatile toolkit for your AI agent. Instead of embedding each tool directly into your codebase, you expose them through an MCP server. This approach simplifies your code while enhancing scalability and maintainability.
+
+LangGraph acts as the orchestrator, connecting your AI agent to these MCP servers. Using an MCP client, it allows the agent to utilize various tools based on user input. This client-server architecture is crucial for building dynamic and responsive applications.
+
+## Core Mechanics
+
+### Setting Up Your Environment
+
+1. **Install Necessary Packages**:
+   Start by installing the essential packages for MCP and LangGraph integration. Use the following command:
+
+   ```bash
+   pip install langchain-mcp-adapters langgraph "langchain[openai]"
+   ```
+
+   This command installs the LangChain MCP adapters, LangGraph, and the OpenAI components needed for our setup.
+
+2. **Configure API Keys**:
+   Ensure you have the necessary API keys for the services you plan to use. For OpenAI, export your API key as follows:
+
+   ```bash
+   export OPENAI_API_KEY=<your_api_key>
+   ```
+
+3. **Create an MCP Server**:
+   Let's create a simple MCP server to perform basic arithmetic operations. This server will show how your agent can interact with external tools:
+
+   ```python
+   # math_server.py
+   from mcp.server.fastmcp import FastMCP
+
+   mcp = FastMCP("Math")
+
+   @mcp.tool()
+   def add(a: int, b: int) -> int:
+       """Add two numbers"""
+       return a + b
+
+   @mcp.tool()
+   def multiply(a: int, b: int) -> int:
+       """Multiply two numbers"""
+       return a * b
+
+   if __name__ == "__main__":
+       mcp.run(transport="stdio")
+   ```
+
+   This code snippet sets up a simple MCP server using FastMCP, capable of adding and multiplying numbers.
+
+4. **Connect LangGraph to MCP Server**:
+   Use LangGraph to connect your AI agent to the MCP server. This connection allows the agent to leverage the tools provided by the server:
+
+   ```python
+   from langchain_mcp_adapters.tools import load_mcp_tools
+   from langgraph.prebuilt import create_react_agent
+   from mcp import ClientSession
+
+   async def main():
+       client = ClientSession()
+       tools = await load_mcp_tools(client)
+       agent = create_react_agent(tools)
+       # Now your agent can use the tools provided by the MCP server
+
+   if __name__ == "__main__":
+       import asyncio
+       asyncio.run(main())
+   ```
+
+   This example demonstrates how to load MCP tools and create a LangGraph agent that can interact with them.
+
+### Practical Examples and Analogies
+
+Think of your AI agent as a chef in a kitchen. The MCP server is like a pantry stocked with various ingredients (tools). Instead of the chef having to go out and buy each ingredient separately (hardcoding), they can simply access the pantry to get what they need. LangGraph acts as the kitchen manager, ensuring the chef has everything needed to prepare a delicious meal (execute tasks).
+
+## Conclusion
+
+By setting up your development environment with MCP servers and LangGraph, you create a flexible and scalable system that can easily integrate with various APIs and services. This setup not only simplifies your code but also enhances its functionality and adaptability. As you continue to explore and experiment with these technologies, you'll discover new ways to build powerful applications that respond dynamically to user inputs and external data.
+
+Remember, the key to mastering this setup is practice and experimentation. Don't hesitate to try out different configurations and tools to see what works best for your specific use case. Happy coding!

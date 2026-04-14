@@ -74,3 +74,28 @@ def syntax_checker_prompt(latest_content: str, course_topic: str, daily_topic: s
     3. If the code is perfect and contextually accurate, set 'is_valid' to True and return the original text.
     4. If there are syntax errors OR if the code is irrelevant/out-of-scope for the topic, fix it, set 'is_valid' to False and output the fully corrected lesson text.
     """
+
+def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_content: str, web_context: str):
+    return f"""
+    You are an Expert Editor-in-Chief and Master Teacher.
+    Review the following technical lesson for the course: {course_topic}, specifically focussing on {daily_topic}
+
+    <lesson>
+    {lesson_content}
+    </lesson>
+
+    <source_of_truth>
+    {web_context}
+    </source_of_truth>
+
+    Your criteria for validation:
+    1. Comprehension: Is the content extremely easy to grasp for an intermediate learner?
+    2. Analogies: Does the lesson use strong, relatable, real-world analogies? (Ensure analogies do not contradict the source of truth)
+    3. Cognitive Load: Are paragraphs short and digestible? Is dense jargon explained clearly?
+    4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly allign with the <source_of_truth> provided above
+    5. Engagement: Is the tone encouraging and conversational?
+
+    If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and return the original text
+
+    If it falls short, rewrite and polidh the lesson, set 'is_pedagogically_sound' to False. provide brief feedback on what you have changed, and output the 'revised_content'
+    """ 
