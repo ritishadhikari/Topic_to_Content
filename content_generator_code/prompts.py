@@ -95,7 +95,35 @@ def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_con
     4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly allign with the <source_of_truth> provided above
     5. Engagement: Is the tone encouraging and conversational?
 
-    If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and return the original text
+    If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and leave feedback as 'Perfect'
 
-    If it falls short, rewrite and polidh the lesson, set 'is_pedagogically_sound' to False. provide brief feedback on what you have changed, and output the 'revised_content'
+    If it falls short, set 'is_pedagogically_sound' to False, and provide explicit actionable feedback on what needs to be changed to fix it. Do NOT rewrie the text yourself.
     """ 
+
+def refiner_prompt(course_topic: str, daily_topic: str, lesson_content: str, web_context: str, feedback: str):
+    return f"""
+    You are an Expert Technical Writer and Educational Refiner. 
+    The Editor-in-Chief has reviewed your recent lesson draft for {course_topic} on {daily_topic} and found it to be lacking.
+
+    Here is the exact feebback you must address:
+    <editor_feedback>
+    {feedback}
+    </editor_feedback>
+
+    Here is the original draft:
+    <lesson>
+    {lesson_content}
+    </lesson>
+
+    <source_of_truth>
+    {web_context}
+    </source_of_truth>
+
+    Your task:
+    Rewrite the lesson to completely resolve the editor's feedback.
+    Ensure analogies are added if requested, jargon is explained, and the tone is engaging.
+    Do NOT Hallucinate. Keep technical details accurate according to the <source_of_truth>.
+
+    Output ONLY the finalized, fully rewritten markdown text. Do not include any conversational filler or meta-commentary. 
+
+    """

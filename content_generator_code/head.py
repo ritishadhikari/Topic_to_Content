@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 import logging, json
 from helper_functions import (add_schedules, get_exact_end_date)
 from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
-                     code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt)
+                     code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
+                     refiner_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview)
@@ -237,7 +238,6 @@ async def daily_content_generator(state: GraphState):
     }
 
 
-
 async def code_presence_checker(state: GraphState):
     """
     Analyzes the daily content to determine if it contains any code blocks.
@@ -306,14 +306,39 @@ async def pedagogical_validator(state: GraphState):
 
     if review.is_pedagogically_sound:
         logger.info(msg="Pedagocical check passed: Content is engaging and easy to grasp.")
-        return {}
+        return {
+            'is_valid': True,
+            'error_feedback': None
+        }
     else:
         logger.info(msg=f'Pedagocical improvements applied. Editor Feedback: {review.feedback}')
         return {
-            'latest_content': review.revised_content
+            'is_valid': False,
+            'error_feedback': review.feedback
         }
 
 
+async def refiner(state: GraphState):
+    """
+    Takes the feedback from the Editor-in-Chief and rewrites the content.
+    """
+    logger.info(msg="---[QA] REFINER: REWRITING CONTENT BASED ON FEEDBACK ---")
+    
+    llm=ChatOpenAI(model="gpt-4o", temperature=0.4)
+
+    ref_prompt=refiner_prompt(course_topic=state.topic,
+                              daily_topic=state.current_topic,
+                              lesson_content=state.latest_content,
+                              web_context=state.daily_web_context,
+                              feedback=state.error_feedback)
+    
+    response=await llm.ainvoke(input=ref_prompt)
+    logger.info(msg="Content Successfully refined.")
+
+    return {
+        "latest_content": response.content,
+        "error_feedback":None
+    }
 
 
 # Add this to the bottom of head.py
