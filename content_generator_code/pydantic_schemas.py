@@ -25,8 +25,19 @@ class SyntaxReview(BaseModel):
     is_valid: bool=Field(description="True if all code snippets are syntactically correct and follow best practices")
     corrected_content: str=Field(description="If errors exist, provide the FULL lesson text with the fixed code. If Valid, return the original text")
 
-################# Pedagogical Validator #######################################################
+################# Pedagogical Validator ######################################################
 class PedagogicalReview(BaseModel):
     is_pedagogically_sound:bool =Field(description="True if the lesson is highly engaging, easy to grasp, and uses strong analogies.")
     feedback: str=Field(description="Brief internal feedback on what was improved (or why it was already good)")
     # revised_content: str=Field(description="The fully polished, easy-to-grasp lesson text. It it was already perfect, return the original text")
+
+
+################# Refresher Generator ######################################################
+class QuizQuestion(BaseModel):
+    question: str= Field(description="A question to test the user's understanding of the lesson")
+    answer: str=Field(description="The correct concise answer to the question")
+
+class RefresherQuiz(BaseModel):
+    questions: List[QuizQuestion]=Field(description="Exactly 10 questions and answers based strictly on the day's lesson.", max_length=10, min_length=10)
+
+

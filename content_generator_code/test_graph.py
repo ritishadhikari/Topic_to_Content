@@ -12,13 +12,15 @@ from head import (
     daily_content_generator,
     code_presence_checker,
     code_syntax_checker,
-    pedagogical_validator,  # <-- Ensure this is exported from head.py
+    pedagogical_validator,
+    refiner,
+    refresher_generator,
     route_after_code_check,
     state_save 
 )
 
 # ==========================================
-# 1. LOOP MANAGEMENT
+# 1. LOOP MANAGEMENT & ROUTERS
 # ==========================================
 
 async def loop_incrementer(state: GraphState):
@@ -29,21 +31,30 @@ async def loop_incrementer(state: GraphState):
     print(f"\n--- [LOOPING] MOVING TO DAY {state.day_number + 1} ---")
     return {
         "day_number": state.day_number + 1,
-        "current_topic": None,        # Reset so researcher finds the next topic
-        "daily_web_context": None,    # Clear old web context
-        "latest_content": None,       # Clear old lesson text
-        "has_code": False             # Reset code detection
+        "current_topic": None,        
+        "daily_web_context": None,    
+        "latest_content": None,       
+        "has_code": False,
+        "is_valid": False,
+        "error_feedback": None,
+        "refresher_questions": None
     }
 
 def loop_router(state: GraphState):
     """
-    Checks if we have reached our 5-day limit.
-    If yes -> END. If no -> loop back to the researcher.
+    Checks if we have reached our 5-day limit or total study days limit.
     """
-    if state.day_number > 5 or state.day_number > state.total_study_days:
+    if state.day_number > 3 or state.day_number > state.total_study_days:
         return END
     return "daily_content_researcher"
 
+def check_pedagogical_validity(state: GraphState):
+    """
+    Checks the verdict from the Editor-in-Chief.
+    """
+    if state.is_valid: 
+        return "PASS"
+    return "FAIL"
 
 # ==========================================
 # 2. GRAPH CONSTRUCTION
@@ -59,43 +70,49 @@ workflow.add_node("daily_content_researcher", daily_content_researcher)
 workflow.add_node("daily_content_generator", daily_content_generator)
 workflow.add_node("code_presence_checker", code_presence_checker)
 workflow.add_node("code_syntax_checker", code_syntax_checker)
-workflow.add_node("pedagogical_validator", pedagogical_validator) # Editor-in-Chief
+workflow.add_node("pedagogical_validator", pedagogical_validator) 
+workflow.add_node("refiner", refiner)                               
+workflow.add_node("refresher_generator", refresher_generator)       
 workflow.add_node("state_save", state_save) 
 workflow.add_node("loop_incrementer", loop_incrementer)
 
-# Define the standard linear edges (Phase 1: Planning)
+# Phase 1: Planning
 workflow.add_edge(START, "input_processor")
 workflow.add_edge("input_processor", "curriculum_researcher")
 workflow.add_edge("curriculum_researcher", "schedule_architect")
 
-# Enter the daily loop for Day 1
+# Phase 2: Daily Generation Loop Entry
 workflow.add_edge("schedule_architect", "daily_content_researcher") 
 workflow.add_edge("daily_content_researcher", "daily_content_generator")
 workflow.add_edge("daily_content_generator", "code_presence_checker")
 
-# Code QA Routing: The Split!
+# Phase 3: Technical QA Routing
 workflow.add_conditional_edges(
     "code_presence_checker",
     route_after_code_check,
     {
-        # If true, go to syntax checker
         "code_syntax_checker": "code_syntax_checker",
-        # If false, skip syntax and go straight to the Editor
         "pedagogical_validator": "pedagogical_validator" 
     }
 )
-
-# The Convergence! 
-# If it went to the syntax checker, it MUST go to the Editor afterwards
 workflow.add_edge("code_syntax_checker", "pedagogical_validator")
 
-# Once the Editor is done, THEN we save it to the .txt file
-workflow.add_edge("pedagogical_validator", "state_save")
+# Phase 4: Pedagogical QA & The Self-Correcting Loop
+workflow.add_conditional_edges(
+    "pedagogical_validator",
+    check_pedagogical_validity,
+    {
+        "PASS": "refresher_generator",  # If valid, generate the quiz!
+        "FAIL": "refiner"               # If invalid, rewrite it!
+    }
+)
+# The crucial loop-back edge! Ensures rewritten text gets code-checked again
+workflow.add_edge("refiner", "code_presence_checker")
 
-# AFTER saving, go to the incrementer to set up the next loop iteration
+# Phase 5: Saving & Iterating
+workflow.add_edge("refresher_generator", "state_save")
 workflow.add_edge("state_save", "loop_incrementer")
 
-# The final loop condition! Back to the top of the loop or END.
 workflow.add_conditional_edges(
     "loop_incrementer",
     loop_router,
@@ -118,8 +135,8 @@ async def run_test():
     print("="*50 + "\n")
     
     initial_input = {
-        "topic": "MCP servers and Integration with Langgraph and Fast API", 
-        "duration_months": 1, 
+        "topic": "Generative AI with MCP, Langgraph and Fast API", 
+        "duration_months": 1.5, 
         "off_days": ["sunday", "SATURDAY"], 
         "start_date": date.today() 
     }
@@ -131,8 +148,9 @@ async def run_test():
         print("✅ FULL 5-DAY TEST COMPLETED SUCCESSFULLY")
         print("="*50)
         
-        filename = f"{initial_input['topic'].replace(' ', '_')}_Course.txt"
-        print(f"\n[SUCCESS] The first 5 highly polished lessons have been sequentially written to: {filename}")
+        # Format updated to explicitly reflect .md
+        filename = f"{initial_input['topic'].replace(' ', '_')}_Course.md"
+        print(f"\n[SUCCESS] The lessons and quizzes have been perfectly written to: {filename}")
         
     except Exception as e:
         print(f"\n❌ ERROR DURING EXECUTION: {e}")

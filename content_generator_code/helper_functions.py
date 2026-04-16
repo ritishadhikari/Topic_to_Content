@@ -1,6 +1,5 @@
 from typing import Dict, List
-from datetime import date
-import calendar
+from datetime import date, timedelta
 
 def add_schedules(existing: List[Dict],new: List[Dict]) -> List[Dict]:
     if len(existing)==0:    return new
@@ -13,13 +12,11 @@ def add_schedules(existing: List[Dict],new: List[Dict]) -> List[Dict]:
         return sorted(new_map.values(), key=lambda k: k['date'])
 
 
-async def get_exact_end_date(start_date: date, months_to_add: int) -> date:
+async def get_exact_end_date(start_date: date, months_to_add: float) -> date:
     """
-    Calculates the exact calendar end date
-    Handles year rollovers and end-of-month clipping
+    Calculates the exact calendar end date by converting months to days.
+    (Uses 30.44 days as the average month length to handle floats like 1.5)
     """
-    month=start_date.month-1+months_to_add
-    year=start_date.year + month//12
-    month=month%12 + 1
-    day=min(start_date.day, calendar.monthrange(year=year, month=month)[1])
-    return date(year, month, day)
+    total_days = int(months_to_add * 30.44)
+    end_date = start_date + timedelta(days=total_days)
+    return end_date

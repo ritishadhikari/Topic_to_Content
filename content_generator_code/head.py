@@ -5,10 +5,10 @@ import logging, json
 from helper_functions import (add_schedules, get_exact_end_date)
 from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
                      code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
-                     refiner_prompt)
+                     refiner_prompt, refresher_generator_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview)
+from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 
@@ -27,7 +27,7 @@ logger=logging.getLogger(name="TopicToContentGraph")
 
 class GraphState(BaseModel):
     topic: str
-    duration_months: int
+    duration_months: float
     off_days: List[str]
     start_date: date
     system_date: date= Field(default_factory=date.today, frozen=True)
@@ -80,8 +80,8 @@ async def curriculum_researcher(state: GraphState):
     try:
         logger.info(msg="Attempting Search with Brave API")
         search_tool=BraveSearchWrapper()
-        search_results=json.loads(search_tool.run(search_query))
-        web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
+        web_context=search_tool.run(search_query)
+        # web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
         logger.info(msg="Brave Web Search Successful")
     except Exception as brave_err:
         logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
@@ -196,8 +196,8 @@ async def daily_content_researcher(state:GraphState):
     try:
         logger.info(msg="Attempting Search with Brave API for Content Generation")
         search_tool=BraveSearchWrapper()
-        search_results=json.loads(search_tool.run(search_query))
-        web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
+        web_context=search_tool.run(search_query)
+        # web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
         logger.info(msg="Brave Web Search Successful")
     except Exception as brave_err:
         logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
@@ -341,40 +341,61 @@ async def refiner(state: GraphState):
     }
 
 
-# Add this to the bottom of head.py
+async def refresher_generator(state: GraphState):
+    """
+    Generates 10 quiz questions based on the finalized lesson text to test user comprehension.
+    """
+    logger.info(msg="--- [Assessment] GENERATING 10 REFRESHER QUESTIONS ---")
 
-# async def state_save(state: GraphState):
-#     """
-#     Saves the finalized daily content into the master schedule dictionary
-#     and appends the text to a local .txt file for easy reading.
-#     """
-#     logger.info(msg=f"--- [SAVING] WRITING DAY {state.day_number} CONTENT TO FILE & STATE ---")
-    
-#     # 1. Write the content to a local .txt file
-#     # We replace spaces in the topic name with underscores for a clean filename
-#     filename = f"{state.topic.replace(' ', '_')}_Course.txt"
-    
-#     with open(filename, "a", encoding="utf-8") as f:
-#         f.write(f"\n\n{'='*60}\n")
-#         f.write(f"DAY {state.day_number}: {state.current_topic}\n")
-#         f.write(f"{'='*60}\n\n")
-#         if state.latest_content:
-#             f.write(state.latest_content)
-            
-#     logger.info(msg=f"Content successfully appended to {filename}")
+    llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
 
-#     # 2. Update the master schedule in the LangGraph State
-#     updated_day = None
-#     for day in state.full_schedule:
-#         if day.get("day_number") == state.day_number and day.get("type") == "STUDY_DAY":
-#             updated_day = day.copy()
-#             # Inject the final content into the dictionary without overwriting the topic_metadata
-#             updated_day["final_lesson_content"] = state.latest_content
-#             break
-            
-#     if updated_day:
-#         # Returning this 1-item list triggers the add_schedules reducer 
-#         # to safely merge this update into the master calendar!
-#         return {"full_schedule": [updated_day]}
+    structured_llm=llm.with_structured_output(schema=RefresherQuiz)
+
+    refresher_prompt=refresher_generator_prompt(course_topic=state.topic,
+                                                daily_topic=state.current_topic,
+                                                lesson_content=state.latest_content)
+
+    quiz=await structured_llm.ainvoke(input=refresher_prompt)
+
+    logger.info(msg=f"Successfully generated {len(quiz.questions)} refresher questions.")
+
+    formatted_quiz="\n\n### 📝 Refresher Quiz\n*Test your understanding of today's concepts:*\n\n"
+    for i,q in enumerate(quiz.questions, 1):
+        formatted_quiz+=f"**Q{i}:** {q.question}\n**A:** {q.answer}\n\n"
+    
+    return {
+        "refresher_questions": formatted_quiz
+    }
+
+
+async def state_save(state: GraphState):
+    """
+    Saves the finalized daily content and the refresher quiz to a local .txt file
+    """
+    logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO FILE ---")
+
+    filename=f"{state.topic.replace(' ','_')}_Course.md"
+
+    with open(file=filename, mode="a", encoding="utf-8") as f:
+        f.write(f"\n\n{'='*60}\n")
+        f.write(f"DAY {state.day_number}: {state.current_topic}\n")
+        f.write(f"{'='*60}\n\n")
+
+        if state.latest_content:
+            f.write(state.latest_content)
         
-#     return {}
+        if state.refresher_questions:
+            f.write(state.refresher_questions)
+
+    logger.info(msg=f"Content and Quiz successfully appended to {filename}")
+
+    # Update the master schedule in the Langgraph state
+    updated_day=None
+    for day in state.full_schedule:
+        if day.get('day_number')==state.day_number and day.get("type")=="STUDY_DAY":
+            updated_day=day.copy()
+            updated_day['final_lesson_content']=state.latest_content
+            break
+
+    if updated_day: return {'full_schedule': [updated_day]}
+    else: return {}

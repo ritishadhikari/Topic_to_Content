@@ -14,7 +14,7 @@ def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: s
     Not one more, not one less. Move from beginner concepts to advanced concepts
     """
 
-def researcher_prompt(topic: str, duration_months: int, web_context: str):
+def researcher_prompt(topic: str, duration_months: float, web_context: str):
     return f"""
     You are an expert curriculum researcher and educational designer.
     The user wants to learn about {topic} over a period of {duration_months} months.
@@ -97,7 +97,7 @@ def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_con
 
     If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and leave feedback as 'Perfect'
 
-    If it falls short, set 'is_pedagogically_sound' to False, and provide explicit actionable feedback on what needs to be changed to fix it. Do NOT rewrie the text yourself.
+    If it falls short, set 'is_pedagogically_sound' to False, and provide explicit actionable feedback on what needs to be changed to fix it. Do NOT rewrite the text yourself.
     """ 
 
 def refiner_prompt(course_topic: str, daily_topic: str, lesson_content: str, web_context: str, feedback: str):
@@ -105,7 +105,7 @@ def refiner_prompt(course_topic: str, daily_topic: str, lesson_content: str, web
     You are an Expert Technical Writer and Educational Refiner. 
     The Editor-in-Chief has reviewed your recent lesson draft for {course_topic} on {daily_topic} and found it to be lacking.
 
-    Here is the exact feebback you must address:
+    Here is the exact feedback you must address:
     <editor_feedback>
     {feedback}
     </editor_feedback>
@@ -126,4 +126,18 @@ def refiner_prompt(course_topic: str, daily_topic: str, lesson_content: str, web
 
     Output ONLY the finalized, fully rewritten markdown text. Do not include any conversational filler or meta-commentary. 
 
+    """
+
+def refresher_generator_prompt(course_topic: str, daily_topic: str, lesson_content: str):
+    return f"""
+    You are an expert Educational Assessor.
+    The user has just finished reading the following lesson for the course {course_topic} on {daily_topic}
+
+    <lesson>
+    {lesson_content}
+    </lesson>
+
+    Your task is to generate exactly 10 assessment questions to test their comprehension of this specific lesson.
+    The questions should range from basic recall to conceptual application.
+    For each question, provide the correct, concise answer based ONLY on the text provided.
     """
