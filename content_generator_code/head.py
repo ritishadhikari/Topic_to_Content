@@ -1,16 +1,17 @@
 from typing import List, Annotated, Dict
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
-import logging, json
+import logging, os
 from helper_functions import (add_schedules, get_exact_end_date)
 from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
                      code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
-                     refiner_prompt, refresher_generator_prompt)
+                    refresher_generator_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
+
 
 
 
@@ -41,10 +42,8 @@ class GraphState(BaseModel):
     day_number: int=0
     latest_content: str|None=None
     has_code: bool=False
-    is_valid: bool=False
-    error_feedback: str|None=None
     is_completed: bool=False
-    refresher_questions: Dict|None=None
+    refresher_questions: str|None=None
 
 async def input_processor(state:GraphState):
     """
@@ -289,7 +288,7 @@ async def route_after_code_check(state:GraphState):
 
 async def pedagogical_validator(state: GraphState):
     """
-    Acts as Editor-in-Cheif. Ensures the text is easy to grasp, uses analogies and maintains a high pedagocical standard befire saving.
+    Acts as Editor-in-Chief. Ensures the text is easy to grasp, uses analogies and maintains a high pedagogical standard. If it faild, it auto-corrects the text in the same pass.
     """
     logger.info(msg="--- [QA] PEDAGOGICAL VALIDATION (EDITIOR-IN-CHIEF) ---")
     llm=ChatOpenAI(model='gpt-4o', temperature=0.4)
@@ -307,38 +306,12 @@ async def pedagogical_validator(state: GraphState):
     if review.is_pedagogically_sound:
         logger.info(msg="Pedagocical check passed: Content is engaging and easy to grasp.")
         return {
-            'is_valid': True,
-            'error_feedback': None
         }
     else:
         logger.info(msg=f'Pedagocical improvements applied. Editor Feedback: {review.feedback}')
         return {
-            'is_valid': False,
-            'error_feedback': review.feedback
+           'latest_content': review.revised_content
         }
-
-
-async def refiner(state: GraphState):
-    """
-    Takes the feedback from the Editor-in-Chief and rewrites the content.
-    """
-    logger.info(msg="---[QA] REFINER: REWRITING CONTENT BASED ON FEEDBACK ---")
-    
-    llm=ChatOpenAI(model="gpt-4o", temperature=0.4)
-
-    ref_prompt=refiner_prompt(course_topic=state.topic,
-                              daily_topic=state.current_topic,
-                              lesson_content=state.latest_content,
-                              web_context=state.daily_web_context,
-                              feedback=state.error_feedback)
-    
-    response=await llm.ainvoke(input=ref_prompt)
-    logger.info(msg="Content Successfully refined.")
-
-    return {
-        "latest_content": response.content,
-        "error_feedback":None
-    }
 
 
 async def refresher_generator(state: GraphState):
@@ -374,7 +347,15 @@ async def state_save(state: GraphState):
     """
     logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO FILE ---")
 
-    filename=f"{state.topic.replace(' ','_')}_Course.md"
+    base_dir=os.path.dirname(os.path.abspath(__file__))
+    foldername="demo_files"
+
+    save_dir=os.path.join(base_dir,foldername)
+    os.makedirs(name=save_dir, exist_ok=True)
+
+    filename_only=f"{state.topic.replace(' ','_')}_Course.md"
+    filename=os.path.join(save_dir,filename_only)
+
 
     with open(file=filename, mode="a", encoding="utf-8") as f:
         f.write(f"\n\n{'='*60}\n")
@@ -397,5 +378,5 @@ async def state_save(state: GraphState):
             updated_day['final_lesson_content']=state.latest_content
             break
 
-    if updated_day: return {'full_schedule': [updated_day]}
+    if updated_day is not None: return {'full_schedule': [updated_day]}
     else: return {}

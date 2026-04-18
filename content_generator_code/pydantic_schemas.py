@@ -29,7 +29,7 @@ class SyntaxReview(BaseModel):
 class PedagogicalReview(BaseModel):
     is_pedagogically_sound:bool =Field(description="True if the lesson is highly engaging, easy to grasp, and uses strong analogies.")
     feedback: str=Field(description="Brief internal feedback on what was improved (or why it was already good)")
-    # revised_content: str=Field(description="The fully polished, easy-to-grasp lesson text. It it was already perfect, return the original text")
+    revised_content: str=Field(description="The fully polished, easy-to-grasp lesson text. It it was already perfect, return the original text")
 
 
 ################# Refresher Generator ######################################################

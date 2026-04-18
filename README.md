@@ -1,83 +1,67 @@
-# Topic_to_Content
-Give your Topic and the Agent shall provide you in-depth study material
-
-High Level Plans:
-    - User Gives any Topic of choice
-    - User is Provided Subtopics of the topics
-    - Each Subtopics consists of detailed explaination of the concepts including analogies
-    - The subtopics also contains 10 questions that were taught in the section to test the user if they have learnt properly
-
-Graph:
-               [ START ]
+                [ START ]
                     |
                     v
           +-------------------------+
-          |    Input_Processor      | <-- Sanitizes user inputs & sets defaults
+          |     Input_Processor     | <-- Sanitizes user inputs & sets defaults
           +------------+------------+
                     |
-
-          +-----------------------+
-          | Curriculum_Researcher |  <-- Web search & syllabus synthesis
-          +-----------------------+  
-                    |           
                     v
-                    |
+          +-----------------------+
+          | Curriculum_Researcher | <-- Web search & syllabus synthesis
+          +-----------+-----------+ 
+                    | 
+                    v
           +------------+------------+
-          |   Schedule_Architect    | <-- Calendar math & Exact JSON topic generation
+          |   Schedule_Architect    | <-- Calendar math & Exact JSON generation
           +------------+------------+
                     |
-                    |
-        +------------+--------------+
-        |   Daily_Content_Researcher| <--(Entry for next Day)   Web Search for Generating contents for 
-        +------------+--------------+                  | 
-                    |                                  |
-                    v                                  |
-                    |                                  |
-          +------------+------------+                  |
-          | Daily_Content_Generator |                  |
-          +------------+------------+                  |
-                    |                                  |
-                    v                                  |
-                    |                                  |
-          +------------+------------+                  |
-    |---->|  Code_Presence_Checker  |                  | 
-    |     +------------+------------+                  |
-    |            /              \                      |
-    |      (Has Code)      (No Code)                   |
-    |           |                |                     |
-    |           v                |                     |
-    |      +------------+        |                     |
-    |      |Code_Syntax_|        |                     | 
-    |      |  Checker   |        |                     |
-    |      +-----+------+        |                     |
-    |           |                |                     |
-    |           v                v                     |
-    |      +------------+------------+                 |
-    |      |  Pedagogical_Validator  |                 | 
-    |      +------------+------------+                 |
-    |                |                                 |
-    |           [ Is Content Valid? ]                  |
-    |           /                 \                    |
-    |      (FAIL)              (PASS)                  |
-    |           |                   |                  |
-    |                               |                  |
-    |           |                   v                  |
-    |           |           +---------------------+    |
-    |           |           | Refresher Generator |    |
-    |           |           +---------------------+    |
-    |           |                   |                  |
-    |           v                   v                  |
-    |      +------------+    +--------------+          |
-    |------|  Refiner   |    |  State_Save  |          |
-           +------------+    +------+-------+          |
-               |                   |                   |
-               ++                                      |
-                                   |                   |
-                         [ Timeline Finished? ]        |
-                         /                \            |     
-                    (NO)               (YES)           |
-                         |                   |         |
-                         v                   v         |     
-               (Next Iteration)         [ END ]        |     
-                         |                             |
-                         |------------------------------
+                    v
+          +------------+--------------+
+    +---->|  Daily_Content_Researcher | 
+    |     +------------+--------------+             
+    |               |                               
+    |               v                               
+    |     +------------+------------+              
+    |     | Daily_Content_Generator | 
+    |     +------------+------------+         
+    |               |                         
+    |               v                         
+    |     +------------+------------+         
+    |     |  Code_Presence_Checker  |         
+    |     +------------+------------+         
+    |            /          \                 
+    |      (Has Code)    (No Code)            
+    |          |              |               
+    |          v              |               
+    |   +------------+        |  
+    |   |Code_Syntax_|        |  
+    |   |  Checker   |        |  
+    |   +-----+------+        v  
+    |         |               |               
+    |         v               |               
+    |   +------------+        |               
+    |   | Pedagogical| <------+               
+    |   |  Validator |                        
+    |   +-----+------+                        
+    |         |                               
+    |                         
+    |         |                                       
+    |       
+    |         |                                    
+    |    +---------------------+
+    |    | Refresher Generator | <-- 10 Questions Synth
+    |    +----------+----------+
+    |               |
+    |               v
+    |           +--------------+
+    |           |  State_Save  |
+    |           +------+-------+
+    |               |
+    |           [ Timeline Finished? ]
+    |            /                 \
+    |           (NO)               (YES)
+    |              |                   |
+    |              v                   v
+    |       (Next Iteration)        [ END ]
+    ---------------|                 
+    

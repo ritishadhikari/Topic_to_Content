@@ -92,41 +92,15 @@ def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_con
     1. Comprehension: Is the content extremely easy to grasp for an intermediate learner?
     2. Analogies: Does the lesson use strong, relatable, real-world analogies? (Ensure analogies do not contradict the source of truth)
     3. Cognitive Load: Are paragraphs short and digestible? Is dense jargon explained clearly?
-    4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly allign with the <source_of_truth> provided above
+    4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly align with the <source_of_truth> provided above
     5. Engagement: Is the tone encouraging and conversational?
 
-    If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and leave feedback as 'Perfect'
+    If the lesson meets all these criteria perfectly, set 'is_pedagogically_sound' to True and leave feedback as 'Perfect' and return the original text
 
-    If it falls short, set 'is_pedagogically_sound' to False, and provide explicit actionable feedback on what needs to be changed to fix it. Do NOT rewrite the text yourself.
+    If it falls short, set 'is_pedagogically_sound' to False, and provide explicit actionable feedback on what needs to be changed , and output the fully rewritten and polished lesson in 'revised_content'. Do not include meta-commentary.
     """ 
 
-def refiner_prompt(course_topic: str, daily_topic: str, lesson_content: str, web_context: str, feedback: str):
-    return f"""
-    You are an Expert Technical Writer and Educational Refiner. 
-    The Editor-in-Chief has reviewed your recent lesson draft for {course_topic} on {daily_topic} and found it to be lacking.
 
-    Here is the exact feedback you must address:
-    <editor_feedback>
-    {feedback}
-    </editor_feedback>
-
-    Here is the original draft:
-    <lesson>
-    {lesson_content}
-    </lesson>
-
-    <source_of_truth>
-    {web_context}
-    </source_of_truth>
-
-    Your task:
-    Rewrite the lesson to completely resolve the editor's feedback.
-    Ensure analogies are added if requested, jargon is explained, and the tone is engaging.
-    Do NOT Hallucinate. Keep technical details accurate according to the <source_of_truth>.
-
-    Output ONLY the finalized, fully rewritten markdown text. Do not include any conversational filler or meta-commentary. 
-
-    """
 
 def refresher_generator_prompt(course_topic: str, daily_topic: str, lesson_content: str):
     return f"""
