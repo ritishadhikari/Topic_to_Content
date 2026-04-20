@@ -9,3 +9,4 @@ grandalf==0.8
 python-dotenv==1.2.2
 langchain-community==0.4.1
 tavily-python==0.7.23
+motor==3.7.1
