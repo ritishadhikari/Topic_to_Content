@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
-
+from motor import motor_asyncio
 
 
 
@@ -341,36 +341,75 @@ async def refresher_generator(state: GraphState):
     }
 
 
-async def state_save(state: GraphState):
-    """
-    Saves the finalized daily content and the refresher quiz to a local .txt file
-    """
-    logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO FILE ---")
+async def mongo_db_save(state: GraphState):
+    # """
+    # Saves the finalized daily content and the refresher quiz to a local .txt file
+    # """
+    # logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO FILE ---")
 
-    base_dir=os.path.dirname(os.path.abspath(__file__))
-    foldername="demo_files"
+    # base_dir=os.path.dirname(os.path.abspath(__file__))
+    # foldername="demo_files"
 
-    save_dir=os.path.join(base_dir,foldername)
-    os.makedirs(name=save_dir, exist_ok=True)
+    # save_dir=os.path.join(base_dir,foldername)
+    # os.makedirs(name=save_dir, exist_ok=True)
 
-    filename_only=f"{state.topic.replace(' ','_')}_Course.md"
-    filename=os.path.join(save_dir,filename_only)
+    # filename_only=f"{state.topic.replace(' ','_')}_Course.md"
+    # filename=os.path.join(save_dir,filename_only)
 
 
-    with open(file=filename, mode="a", encoding="utf-8") as f:
-        f.write(f"\n\n{'='*60}\n")
-        f.write(f"DAY {state.day_number}: {state.current_topic}\n")
-        f.write(f"{'='*60}\n\n")
+    # with open(file=filename, mode="a", encoding="utf-8") as f:
+    #     f.write(f"\n\n{'='*60}\n")
+    #     f.write(f"DAY {state.day_number}: {state.current_topic}\n")
+    #     f.write(f"{'='*60}\n\n")
 
-        if state.latest_content:
-            f.write(state.latest_content)
+    #     if state.latest_content:
+    #         f.write(state.latest_content)
         
-        if state.refresher_questions:
-            f.write(state.refresher_questions)
+    #     if state.refresher_questions:
+    #         f.write(state.refresher_questions)
 
-    logger.info(msg=f"Content and Quiz successfully appended to {filename}")
+    # logger.info(msg=f"Content and Quiz successfully appended to {filename}")
 
-    # Update the master schedule in the Langgraph state
+    # Saving it in Mongdb collection
+    """
+    Saves the finalized daily content and the refresher quiz asynchronously to MongoDB Atlas
+    """
+
+    logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO MONGO_DB")
+    try:
+        mongo_uri=os.getenv("MONGO_URI")
+        if not mongo_uri:
+            logger.warning(msg="MONGO_URI not found! Skipping database save.")
+        else:
+            client=motor_asyncio.AsyncIOMotorClient(host=mongo_uri)
+            
+            db=client.ai_course_generator
+            collection=db.daily_lessons
+            document={
+                "course_topic":state.topic,
+                "day_number": state.day_number,
+                "daily_topic": state.current_topic,
+                "lesson_content": state.latest_content,
+                "quiz_content": state.refresher_questions,
+                "generated_at": datetime.now()
+                                }
+            result=await collection.insert_one(document=document)
+            logger.info(msg=f"Successfully synced Day {state.day_number} to MongoDB! Document ID: {result.inserted_id}")
+
+            # Close the connection
+            client.close()
+    except Exception as e:
+        logger.error(f"❌ Failed to save to MongoDB: {e}", exc_info=True)
+    return {}
+    
+
+async def state_updater(state: GraphState):
+    """
+    Updates the master schedule in the Langgraph state with the final generated content.
+    """
+    logger.info(msg=f"---[STATE UPDATE] UPDATING MASTER SCHEDULE FOR DAY {state.day_number}")
+
+     # Update the master schedule in the Langgraph state
     updated_day=None
     for day in state.full_schedule:
         if day.get('day_number')==state.day_number and day.get("type")=="STUDY_DAY":

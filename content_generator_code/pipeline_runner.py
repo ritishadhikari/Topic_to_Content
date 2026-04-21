@@ -10,7 +10,7 @@ from head import (
     daily_content_researcher, daily_content_generator,
     code_presence_checker, code_syntax_checker,
     pedagogical_validator, refresher_generator,
-    route_after_code_check, state_save
+    route_after_code_check, mongo_db_save, state_updater
 )
 
 logging.basicConfig(
@@ -51,7 +51,8 @@ workflow.add_node(node="code_presence_checker", action=code_presence_checker)
 workflow.add_node(node="code_syntax_checker", action=code_syntax_checker)
 workflow.add_node(node="pedagogical_validator", action=pedagogical_validator)
 workflow.add_node(node="refresher_generator", action=refresher_generator)
-workflow.add_node(node="state_save", action=state_save)
+workflow.add_node(node="database_saver", action=mongo_db_save)
+workflow.add_node(node="state_updater", action=state_updater)
 workflow.add_node(node="loop_incrementer", action=loop_incrementer)
 
 workflow.add_edge(start_key=START, end_key="input_processor")
@@ -72,8 +73,9 @@ workflow.add_conditional_edges(
 workflow.add_edge(start_key="code_syntax_checker",end_key="pedagogical_validator")
 
 workflow.add_edge(start_key="pedagogical_validator", end_key="refresher_generator")
-workflow.add_edge(start_key="refresher_generator", end_key="state_save")
-workflow.add_edge(start_key="state_save", end_key="loop_incrementer")
+workflow.add_edge(start_key="refresher_generator", end_key="database_saver")
+workflow.add_edge(start_key="database_saver", end_key="state_updater")
+workflow.add_edge(start_key="state_updater", end_key="loop_incrementer")
 
 workflow.add_conditional_edges(
     source="loop_incrementer",
@@ -104,8 +106,9 @@ async def run_pipeline():
         logger.info(msg="="*60)
         logger.info(msg="✅ FULL COURSE GENERATION COMPLETED SUCCESSFULLY")
         logger.info(msg="="*60)
-        file_name=f"{initial_input['topic'].replace(' ','_')}_Course.md"
-        logger.info(f"[SUCCESS] The lessons and quizzes have been perfectly written to: {file_name}")
+        # file_name=f"{initial_input['topic'].replace(' ','_')}_Course.md"
+        # logger.info(f"[SUCCESS] The lessons and quizzes have been perfectly written to: {file_name}")
+        logger.info(f"[SUCCESS] The lessons and quizzes have been perfectly written and has been inserted to the database")
     except Exception as e:
         logger.error(msg=f"❌ error during execution: {e}", exc_info=True)
 
