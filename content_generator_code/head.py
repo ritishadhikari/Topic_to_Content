@@ -12,6 +12,11 @@ from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, Pedago
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 from motor import motor_asyncio
+from variables import (SCHEDULE_ARCHITECT_MODEL,
+                       DAILY_CONTENT_GENERATOR_MODEL,CODE_PRESENCE_CHECKER_MODEL,
+                       CODE_SYNTAX_CHECKER_MODEL, PEDAGOGICAL_VALIDATOR_MODEL,
+                       REFRESHER_GENERATOR_MODEL
+                       )
 
 
 
@@ -148,7 +153,7 @@ async def schedule_architect(state: GraphState):
     
     logger.info(f"Calculated Timeline: {total_study_days} total exact study days found")
 
-    llm=ChatOpenAI(model="gpt-4o", temperature=0)
+    llm=ChatOpenAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=CurriculumPlan)
 
     prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days, research_notes=state.research_notes)
@@ -220,7 +225,7 @@ async def daily_content_generator(state: GraphState):
     """
     logger.info(msg=f"--- [DAILY GENERATOR] WRITING LESSON FOR DAY {state.day_number} ---")
     
-    llm=ChatOpenAI(model="gpt-4o", temperature=0.3)
+    llm=ChatOpenAI(model=DAILY_CONTENT_GENERATOR_MODEL, temperature=0.3)
     
     daily_prompt=daily_content_prompt(
         course_topic=state.topic,
@@ -244,7 +249,7 @@ async def code_presence_checker(state: GraphState):
     """
     logger.info(msg=f"---[QA] CHECKING FOR CODE IN DAY {state.day_number} CONTENT")
 
-    llm=ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llm=ChatOpenAI(model=CODE_PRESENCE_CHECKER_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=CodePresence)
     code_presence_prompt=code_presence_checker_prompt(content=state.latest_content)
     result= await structured_llm.ainvoke(input=code_presence_prompt)
@@ -261,7 +266,7 @@ async def code_syntax_checker(state: GraphState):
     """
     logger.info(msg="---[QA] VALIDATING CODE SYNTAX & RELEVANCY")
 
-    llm=ChatOpenAI(model='gpt-4o', temperature=0)
+    llm=ChatOpenAI(model=CODE_SYNTAX_CHECKER_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=SyntaxReview)
     syntax_prompt=syntax_checker_prompt(
         latest_content=state.latest_content,
@@ -291,7 +296,7 @@ async def pedagogical_validator(state: GraphState):
     Acts as Editor-in-Chief. Ensures the text is easy to grasp, uses analogies and maintains a high pedagogical standard. If it faild, it auto-corrects the text in the same pass.
     """
     logger.info(msg="--- [QA] PEDAGOGICAL VALIDATION (EDITIOR-IN-CHIEF) ---")
-    llm=ChatOpenAI(model='gpt-4o', temperature=0.4)
+    llm=ChatOpenAI(model=PEDAGOGICAL_VALIDATOR_MODEL, temperature=0.4)
     structured_llm=llm.with_structured_output(schema=PedagogicalReview)
 
     pedagogical_prompt=pedagogical_validator_prompt(
@@ -320,7 +325,7 @@ async def refresher_generator(state: GraphState):
     """
     logger.info(msg="--- [Assessment] GENERATING 10 REFRESHER QUESTIONS ---")
 
-    llm=ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+    llm=ChatOpenAI(model=REFRESHER_GENERATOR_MODEL, temperature=0.3)
 
     structured_llm=llm.with_structured_output(schema=RefresherQuiz)
 
