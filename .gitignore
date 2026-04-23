@@ -2,3 +2,4 @@ venv
 .env
 demo_files
 demo_files/*
+__pycache__/
