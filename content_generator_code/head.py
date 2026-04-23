@@ -2,17 +2,17 @@ from typing import List, Annotated, Dict
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
 import logging, os
-from helper_functions import (add_schedules, get_exact_end_date)
-from prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
+from content_generator_code.helper_functions import (add_schedules, get_exact_end_date)
+from content_generator_code.prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
                      code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
                     refresher_generator_prompt)
 from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
+from content_generator_code.pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 from motor import motor_asyncio
-from variables import (SCHEDULE_ARCHITECT_MODEL,
+from content_generator_code.variables import (SCHEDULE_ARCHITECT_MODEL,
                        DAILY_CONTENT_GENERATOR_MODEL,CODE_PRESENCE_CHECKER_MODEL,
                        CODE_SYNTAX_CHECKER_MODEL, PEDAGOGICAL_VALIDATOR_MODEL,
                        REFRESHER_GENERATOR_MODEL

@@ -4,7 +4,7 @@ from datetime import date
 from langgraph.graph import StateGraph, START, END
 
 # import from head.py
-from head import (
+from content_generator_code.head import (
     GraphState, input_processor,
     curriculum_researcher, schedule_architect,
     daily_content_researcher, daily_content_generator,
@@ -37,7 +37,7 @@ async def loop_router(state: GraphState):
     """
     Checks if we have reached our study days limit
     """
-    if state.day_number>5 or state.day_number > state.total_study_days: return END
+    if state.day_number>3 or state.day_number > state.total_study_days: return END
     else: return "daily_content_researcher"
 
 workflow=StateGraph(state_schema=GraphState)
