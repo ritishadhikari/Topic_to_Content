@@ -2,7 +2,6 @@ import os
 from datetime import date, datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
 import bcrypt
 from jose import JWTError, jwt
 import motor.motor_asyncio
