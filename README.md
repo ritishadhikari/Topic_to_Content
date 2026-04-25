@@ -69,21 +69,28 @@
 Folder Structures as of Now:
 
 Topic_to_Content/
-├── api.py                     <-- Ultra-clean entry point (Just loads the routers)
+├── .github/
+│   └── workflows/
+│       └── ci-pipeline.yml
+├── backend_code/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── pydantic_schema.py
+│   ├── security.py
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── authentication.py
+│   │   └── course_generate.py
+│   └── content_generator_code/
+│       ├── __init__.py
+│       ├── head.py
+│       ├── helper_functions.py
+│       ├── pipeline_runner.py
+│       ├── prompts.py
+│       ├── pydantic_schemas.py
+│       └── variables.py
 ├── .env
-├── requirements.txt
 ├── .gitignore
-└── backend_code/
-    ├── __init__.py
-    ├── database.py            <-- MongoDB connection and lifespan logic
-    ├── security.py            <-- pwd_context, JWT creation, get_current_user
-    ├── pydantic_schemas.py    <-- Your data models (already done!)
-    ├── routers/               <-- Where your endpoints live
-    │   ├── __init__.py
-    │   ├── auth_router.py     <-- /register and /authorize endpoints
-    │   └── course_router.py   <-- /generate-course and /courses/{topic} endpoints
-    └── content_generator_code/ 
-        ├── __init__.py
-        ├── head.py            
-        ├── pipeline_runner.py 
-        └── ... (rest of LangGraph files)
+├── api.py
+├── README.md
+└── requirements.txt
