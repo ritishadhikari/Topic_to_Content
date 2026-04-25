@@ -4,7 +4,7 @@ from datetime import date
 from langgraph.graph import StateGraph, START, END
 
 # import from head.py
-from head import (
+from backend_code.content_generator_code.head import (
     GraphState, input_processor,
     curriculum_researcher, schedule_architect,
     daily_content_researcher, daily_content_generator,
@@ -37,7 +37,7 @@ async def loop_router(state: GraphState):
     """
     Checks if we have reached our study days limit
     """
-    if state.day_number>5 or state.day_number > state.total_study_days: return END
+    if state.day_number>3 or state.day_number > state.total_study_days: return END
     else: return "daily_content_researcher"
 
 workflow=StateGraph(state_schema=GraphState)
@@ -89,16 +89,16 @@ workflow.add_conditional_edges(
 app=workflow.compile()
 
 
-async def run_pipeline():
+async def run_pipeline(topic: str, duration_months: float, off_days: list, start_date: date=date.today()):
     logger.info(msg="="*60)
-    logger.info(msg="STARTING LANGGRAPH FULL PIPELINE LOOP ORCHESTRATION")
+    logger.info(msg=f"STARTING LANGGRAPH FULL PIPELINE FOR {topic.upper()}")
     logger.info(msg="="*60)
 
     initial_input={
-        "topic": "Generative AI with MCP, Langgraph and FastAPI",
-        "duration_months": 1.5,
-        "off_days":["sunday","Thursday"],
-        "start_date": date.today()
+        "topic": topic,
+        "duration_months": duration_months,
+        "off_days":off_days,
+        "start_date": start_date
     }
 
     try:
@@ -113,4 +113,8 @@ async def run_pipeline():
         logger.error(msg=f"❌ error during execution: {e}", exc_info=True)
 
 if __name__=="__main__":
-    asyncio.run(run_pipeline())
+    asyncio.run(run_pipeline(
+        topic="Generative AI with MCP, Langgraph and FastAPI",
+        duration_months=1.5,
+        off_days=["Sunday","Thursday"]
+        ))

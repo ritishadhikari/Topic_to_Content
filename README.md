@@ -65,3 +65,32 @@
     |       (Next Iteration)        [ END ]
     ---------------|                 
     
+
+Folder Structures as of Now:
+
+Topic_to_Content/
+├── .github/
+│   └── workflows/
+│       └── ci-pipeline.yml
+├── backend_code/
+│   ├── __init__.py
+│   ├── database.py
+│   ├── pydantic_schema.py
+│   ├── security.py
+│   ├── routers/
+│   │   ├── __init__.py
+│   │   ├── authentication.py
+│   │   └── course_generate.py
+│   └── content_generator_code/
+│       ├── __init__.py
+│       ├── head.py
+│       ├── helper_functions.py
+│       ├── pipeline_runner.py
+│       ├── prompts.py
+│       ├── pydantic_schemas.py
+│       └── variables.py
+├── .env
+├── .gitignore
+├── api.py
+├── README.md
+└── requirements.txt
