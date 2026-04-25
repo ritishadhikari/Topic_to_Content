@@ -69,4 +69,4 @@ async def get_current_user(token: str=Depends(dependency=oauth2_schema)) -> Data
             detail="Username could not be located in the database",
             headers={"WWW-Authenticate":"Bearer"}
         )
-    return user
+    return DataBaseUser.model_validate(obj=user)
