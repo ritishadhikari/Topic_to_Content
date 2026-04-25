@@ -2,9 +2,11 @@ name: Backend CI Pipeline
 
 on: 
   push:
-    branches:["main"]
+    branches: 
+      - main
   pull_request:
-    branches:["main"]
+    branches: 
+      - main
 
 jobs:
   build-and-test:
@@ -17,7 +19,7 @@ jobs:
     - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.11"
+        python-version: "3.13"
         cache: "pip"  # Speeds up future runs by caching dependencies
       
     - name: Install Dependencies
