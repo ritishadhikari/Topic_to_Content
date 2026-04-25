@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
 from backend_code.database import db_state
+from backend_code.pydantic_schema import DataBaseUser
 
 load_dotenv()
 
@@ -19,9 +20,9 @@ def verify_password(plain_password:str, hashed_password:str):
     """
     Needed during Authorization
     """
-    password__bytes=plain_password.encode('utf-8')[:72]
+    password_bytes=plain_password.encode('utf-8')[:72]
     hashed_password=hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password=password__bytes,hashed_password=hashed_password)
+    return bcrypt.checkpw(password=password_bytes,hashed_password=hashed_password)
 
 def get_password_hash(plain_password:str):
     """
@@ -42,9 +43,9 @@ def create_access_token(data:dict, expires_delta: timedelta|None=None):
     to_encode.update({'exp':expire})
     return jwt.encode(claims=to_encode,key=JWT_SECRET_KEY,algorithm=ALGORITHM)
 
-async def get_current_user(token: str=Depends(dependency=oauth2_schema)):
+async def get_current_user(token: str=Depends(dependency=oauth2_schema)) -> DataBaseUser:
     try:
-        payload=jwt.decode(token=token,key=JWTError, algorithms=[ALGORITHM])
+        payload=jwt.decode(token=token,key=JWT_SECRET_KEY, algorithms=[ALGORITHM])
         username: str=payload.get('sub')
         if username is None:
             raise HTTPException(

@@ -13,3 +13,6 @@ class CourseRequest(BaseModel):
     duration_months: float
     off_days: list[str]
     
+class DataBaseUser(BaseModel):
+    username: str
+    hashed_password: str

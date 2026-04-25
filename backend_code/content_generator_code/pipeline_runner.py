@@ -4,7 +4,7 @@ from datetime import date
 from langgraph.graph import StateGraph, START, END
 
 # import from head.py
-from content_generator_code.head import (
+from backend_code.content_generator_code.head import (
     GraphState, input_processor,
     curriculum_researcher, schedule_architect,
     daily_content_researcher, daily_content_generator,
