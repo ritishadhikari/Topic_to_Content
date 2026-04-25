@@ -29,5 +29,5 @@ jobs:
       
     - name: Check Syntax & Imports
       run: |
-        python -c "from backend_code.database import lifespan; from backend_code.routers import authentication, course_generate; print("All Modueles imported successfully")"
+        python -c "from backend_code.database import lifespan; from backend_code.routers import authentication, course_generate; print("All Modueles imported successfully")
 
