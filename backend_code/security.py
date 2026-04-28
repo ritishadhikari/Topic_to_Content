@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import bcrypt
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
@@ -39,7 +39,7 @@ def create_access_token(data:dict, expires_delta: timedelta|None=None):
     Needed during Authorization
     """
     to_encode=data.copy()
-    expire=datetime.utcnow()+(expires_delta if expires_delta is not None else timedelta(minutes=15))
+    expire=datetime.now(tz=timezone.utc)+(expires_delta if expires_delta is not None else timedelta(minutes=15))
     to_encode.update({'exp':expire})
     return jwt.encode(claims=to_encode,key=JWT_SECRET_KEY,algorithm=ALGORITHM)
 
