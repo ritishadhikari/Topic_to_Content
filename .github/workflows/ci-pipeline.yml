@@ -9,8 +9,16 @@ on:
       - main
 
 jobs:
-  build-and-test:
+
+  test:
+    
     runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
 
     steps:
     - name: Check out repository code
@@ -27,7 +35,14 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
       
-    - name: Check Syntax & Imports
+    - name: Run Pytest
+      env:
+        # Tell the code to connect to the temporary Github MongoDB
+        MONGO_URI: mongodb://localhost:27017
+        JWT_SECRET_KEY: "super-secret-ci-testing-key"
+        ALGORITHM: "HS256"
+        ACCESS_TOKEN_EXPIRE_MINUTES: "120"
       run: |
-        python -c "from backend_code.database import lifespan; from backend_code.routers import authentication, course_generate; print('All Modueles imported successfully')"
+        pytest -v
 
+    

@@ -32,7 +32,7 @@ async def register_user(user: UserCreate):
         logger.info(msg=f"User {user.username} registered successfully.")
         return {"msg": "User created Successfully"}
     
-@router.post(path="/authorize", response_model=Token)
+@router.post(path="/authorize", response_model=Token, status_code=status.HTTP_200_OK)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm=Depends()):
     logger.info(f"Login attempt for user: {form_data.username}")
     user=await db_state.db.users.find_one({"username":form_data.username})
