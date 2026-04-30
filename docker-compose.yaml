@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # FastAPI Application
+  api:
+    build:  .
+    container_name: topic_to_content
+    ports: 
+      - "8991:8000"
+    env_file:
+      - .env
+    environment:
+      # Overwrites the MONGO_URI from the .env
+      # API talks to the local mongo db container
+      - MONGO_URI=mongodb://mongodb:27017
+    depends_on:
+      - mongodb
+    networks:
+      - backend_network
+
+  # Local MongoDB Database
+  mongodb:
+    image: mongo:latest
+    container_name: course_generator_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - backend_network
+
+volumes:
+  mongo_data:
+
+# Creating Private LAN just for the containers
+networks:
+  backend_network:
+    driver: bridge
