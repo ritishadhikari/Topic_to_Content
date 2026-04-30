@@ -7,6 +7,8 @@ services:
     container_name: topic_to_content
     ports: 
       - "8991:8000"
+    volumes:
+      - ./tests:/app/tests
     env_file:
       - .env
     environment:
