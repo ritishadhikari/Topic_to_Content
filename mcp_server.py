@@ -2,6 +2,7 @@ import os
 import logging
 from datetime import date
 from dotenv import load_dotenv
+from asyncio import create_task
 
 # Import the MCP Server SDK
 from mcp.server.fastmcp import FastMCP
@@ -22,6 +23,36 @@ logger=logging.getLogger(name="CourseGeneratorMCP")
 # Initialize the MCP Server
 mcp=FastMCP(name="CourseGeneratorServer")
 
+async def background_pipeline_worker(
+        topic: str,
+        duration_months: float,
+        off_days: list[str]
+    ):
+    """
+    Runs the heavy Langgraph Pipeline in the background and manages its own isolated MongoDB connection
+    """
+    logger.info(msg=f"Background Worker Started for topic: {topic}")
+    try:
+        # Manually connect to MongoDB since FastAPI's lifespan is not running here
+        mongo_uri=os.environ.get("MONGO_URI")
+        db_state.client=AsyncIOMotorClient(host=mongo_uri)
+        db_state.db=db_state.client.ai_course_generator
+        await run_pipeline(
+            topic=topic,
+            duration_months=duration_months,
+            off_days=off_days,
+            start_date=date.today()
+        )
+    except Exception as e:
+        logger.error(msg=f"Pipeline failed: {e}",exc_info=True)
+        return f"Error: Failed to generate course. {str(e)}"
+    finally:
+        # safely close the connection ONLY when the pipeline is completely finished
+        if db_state.client: db_state.client.close()
+        logger.info(msg="Background worker finished and DB connection closed cleanly")
+        return f"Successfully generated the course for {topic}. The data has been saved to the database."
+
+
 # Generate new course
 @mcp.tool()
 async def generate_new_course(topic: str, duration_months: float, off_days: list[str]) ->str:
@@ -36,67 +67,54 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
     """
     logger.info(f"LLM requested to generate course for: {topic}")
 
-    try:
-        # Manually connect to MongoDB since FastAPI's lifespan is not running here
-        mongo_uri=os.environ.get("MONGO_URI")
-        db_state.client=AsyncIOMotorClient(host=mongo_uri)
-        db_state.db=db_state.client.ai_course_generator
-        await run_pipeline(
-            topic=topic,
-            duration_months=duration_months,
-            off_days=off_days,
-            start_date=date.today()
-        )
-        
-        # Clean up the connection
-        db_state.client.close()
-        return f"Successfully generated the course for {topic}. The data has been saved to the database."
-    except Exception as e:
-        logger.error(msg=f"Pipeline failed: {e}",exc_info=True)
-        return f"Error: Failed to generate course. {str(e)}"
-        
-    
-    
+    create_task(coro=background_pipeline_worker(
+        topic=topic,
+        duration_months=duration_months,
+        off_days=off_days
+    ))
+
+    # Immediately return a success message so that Claude does not time out
+    return (
+        f"""
+        Successfully started generating the course for {topic} in the background! 
+        It will take a few minutes to complete. Please advise the user to check back shortly by asking you to fetch the course summary.
+        """
+    )
+
+
 # Read an existing course
 @mcp.tool()
 async def get_course_summary(topic: str) -> str:
     """
-    Fetches an existing course curriculum from the MongoDB database.
-    Use this tool when the user asks to view, read, summarize, or check if a course already exists.
+    Fetches an existing course curriculum from the MongoDB database
+    Use this tool when the user asks to view, read, summarize or check if a course already exists.
 
     Args:
-        topic: The exact name of the course to retrieve.
+        topic: The exact name of the course to retrieve
     """
-    logger.info(f"LLM requested summary for existing course: {topic}")
-
+    logger.info(msg=f"LLM requested summary for existing course: {topic}")
     try:
         mongo_uri=os.environ.get("MONGO_URI")
         db_state.client=AsyncIOMotorClient(host=mongo_uri)
         db_state.db=db_state.client.ai_course_generator
 
         clean_topic=topic.replace("_"," ")
-        cursor=db_state.db.daily_lessons.find(
-            docs={'course_topic':clean_topic}).sort("day_number",1)
+        cursor=db_state.db.daily_lessons.\
+            find(filter={'course_topic':clean_topic}).\
+                sort("day_number",1)
         lessons=await cursor.to_list(length=180)
-
         db_state.client.close()
 
         if not lessons:
-            return f"No Course found for the topic {topic}. You should ask the user if they would want to generate it?"
-        
-        # Format the database JSON into a readable string for the LLM
-        summary=f"Course: {clean_topic} \nTotal Lessons Found: {len(lessons)}"
-
-        for lesson in lessons[:5]:
-            summary+=f"Day {lesson["day_number"]}: {lesson["daily_topics"]}\n"
-        summary+="\n...(More lessons are available in the database)"
-        return summary
-    
+            return f"No course found for the topic {topic}. You should ask the user if they would want to generate it."
+        else:
+            summary=f"Course: {clean_topic}\n Total Lessons Found: {len(lessons)} \n\n"
+            for lesson in lessons[:5]: # return only the first 5 days
+                summary+=f"Day {lesson['day_number']}: {lesson['daily_topic']}\n"
+            summary+="\n...(More lessons are available in the database)"
+            return summary
     except Exception as e:
         return f"Database Error: {str(e)}"
-    
-
-# Start the Server
 
 if __name__=="__main__":
     logger.info(msg="Starting FastMCP Server on STDIO...")
