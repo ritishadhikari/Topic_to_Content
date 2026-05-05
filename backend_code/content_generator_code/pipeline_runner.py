@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import date
 from langgraph.graph import StateGraph, START, END
+import traceback
 
 # import from head.py
 from backend_code.content_generator_code.head import (
@@ -134,6 +135,10 @@ async def run_pipeline(topic: str, duration_months: float, off_days: list, start
         logger.info(f"[SUCCESS] The lessons and quizzes have been perfectly written and has been inserted to the database")
     except Exception as e:
         logger.error(msg=f"❌ error during execution: {e}", exc_info=True)
+        os.makedirs("demo_files", exist_ok=True)
+        with open(file="demo_files/mcp_crash_report.txt",mode="w") as f:
+            f.write(f"CRASH REPORT:\n{traceback.format_exc()}")
+
 
 if __name__=="__main__":
     asyncio.run(run_pipeline(

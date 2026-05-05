@@ -52,7 +52,7 @@ async def background_pipeline_worker(
         logger.info(msg="Background worker finished and DB connection closed cleanly")
         return f"Successfully generated the course for {topic}. The data has been saved to the database."
 
-
+active_tasks=set()
 # Generate new course
 @mcp.tool()
 async def generate_new_course(topic: str, duration_months: float, off_days: list[str]) ->str:
@@ -67,11 +67,17 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
     """
     logger.info(f"LLM requested to generate course for: {topic}")
 
-    create_task(coro=background_pipeline_worker(
+    task=create_task(coro=background_pipeline_worker(
         topic=topic,
         duration_months=duration_months,
         off_days=off_days
     ))
+
+    active_tasks.add(task)
+
+    # tell the task to automatically remove itself from the set when it finishes
+    task.add_done_callback(active_tasks.discard)
+
 
     # Immediately return a success message so that Claude does not time out
     return (
