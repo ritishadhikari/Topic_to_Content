@@ -22,10 +22,10 @@ jobs:
         run: |
           touch .env
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
           echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
           echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
+          echo "MCP_USER=ci_test_user" >> .env
           
       - name: Build and Test Docker Compose
         run: docker compose up -d --build 
@@ -34,8 +34,16 @@ jobs:
       - name: Wait for Environment Initialization
         run: sleep 15
       
+      - name: Initialize MongoDB Replica Set
+        run: |
+          docker exec course_generator_db mongosh --eval "rs.initiate()"
+          sleep 10
+      
       - name: Execute Pytest
         run: docker exec topic_to_content pytest -v
+
+      - name: Build MCP Server Image
+        run: docker build -t  course-generator-mcp -f Dockerfile.mcp .
 
       - name: Tear Down Containers
         if: always()

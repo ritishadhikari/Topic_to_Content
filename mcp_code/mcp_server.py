@@ -23,8 +23,11 @@ logger=logging.getLogger(name="CourseGeneratorMCP")
 # Initialize the MCP Server
 mcp=FastMCP(name="CourseGeneratorServer")
 
+MCP_IDENTITY=os.environ.get("MCP_USER","default_mcp_user")
+
 async def background_pipeline_worker(
         topic: str,
+        username: str,
         duration_months: float,
         off_days: list[str]
     ):
@@ -39,6 +42,7 @@ async def background_pipeline_worker(
         db_state.db=db_state.client.ai_course_generator
         await run_pipeline(
             topic=topic,
+            username=username,
             duration_months=duration_months,
             off_days=off_days,
             start_date=date.today()
@@ -69,6 +73,7 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
 
     task=create_task(coro=background_pipeline_worker(
         topic=topic,
+        username=MCP_IDENTITY,
         duration_months=duration_months,
         off_days=off_days
     ))
@@ -106,7 +111,7 @@ async def get_course_summary(topic: str) -> str:
 
         clean_topic=topic.replace("_"," ")
         cursor=db_state.db.daily_lessons.\
-            find(filter={'course_topic':clean_topic}).\
+            find(filter={'course_topic':clean_topic,"username":MCP_IDENTITY}).\
                 sort("day_number",1)
         lessons=await cursor.to_list(length=180)
         db_state.client.close()

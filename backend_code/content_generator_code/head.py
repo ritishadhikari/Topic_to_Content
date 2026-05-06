@@ -33,6 +33,7 @@ logger=logging.getLogger(name="TopicToContentGraph")
 
 class GraphState(BaseModel):
     topic: str
+    username: str
     duration_months: float
     off_days: List[str]
     start_date: date
@@ -392,6 +393,7 @@ async def mongo_db_save(state: GraphState):
             collection=db.daily_lessons
             document={
                 "course_topic":state.topic,
+                "username": state.username,
                 "day_number": state.day_number,
                 "daily_topic": state.current_topic,
                 "lesson_content": state.latest_content,

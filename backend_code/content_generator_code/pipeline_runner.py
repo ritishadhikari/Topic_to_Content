@@ -92,13 +92,16 @@ workflow.add_conditional_edges(
     }
 )
 
-async def run_pipeline(topic: str, duration_months: float, off_days: list, start_date: date=date.today()):
+async def run_pipeline(topic: str, username: str, 
+                       duration_months: float, off_days: list, 
+                       start_date: date=date.today()):
     logger.info(msg="="*60)
     logger.info(msg=f"STARTING LANGGRAPH FULL PIPELINE FOR {topic.upper()}")
     logger.info(msg="="*60)
 
     initial_input={
         "topic": topic,
+        "username": username,
         "duration_months": duration_months,
         "off_days":off_days,
         "start_date": start_date
@@ -114,7 +117,7 @@ async def run_pipeline(topic: str, duration_months: float, off_days: list, start
 
     # Generate the unique "Saveslot" (thread_id) based on the course name
     clean_topic=topic.replace(" ","_")
-    thread_id=f"course_generation_{clean_topic}"
+    thread_id=f"course_generation_{username}_{clean_topic}"
     config={"configurable":{"thread_id":thread_id}}
 
     try:
