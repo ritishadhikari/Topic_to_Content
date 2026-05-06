@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import date
 from langgraph.graph import StateGraph, START, END
+import traceback
 
 # import from head.py
 from backend_code.content_generator_code.head import (
@@ -12,6 +13,11 @@ from backend_code.content_generator_code.head import (
     pedagogical_validator, refresher_generator,
     route_after_code_check, mongo_db_save, state_updater
 )
+import os
+from motor.motor_asyncio import AsyncIOMotorClient
+from backend_code.database import db_state
+from langgraph.checkpoint.mongodb import MongoDBSaver
+from pymongo import MongoClient
 
 logging.basicConfig(
                 level=logging.INFO,
@@ -86,23 +92,44 @@ workflow.add_conditional_edges(
     }
 )
 
-app=workflow.compile()
-
-
-async def run_pipeline(topic: str, duration_months: float, off_days: list, start_date: date=date.today()):
+async def run_pipeline(topic: str, username: str, 
+                       duration_months: float, off_days: list, 
+                       start_date: date=date.today()):
     logger.info(msg="="*60)
     logger.info(msg=f"STARTING LANGGRAPH FULL PIPELINE FOR {topic.upper()}")
     logger.info(msg="="*60)
 
     initial_input={
         "topic": topic,
+        "username": username,
         "duration_months": duration_months,
         "off_days":off_days,
         "start_date": start_date
     }
 
+    mongo_uri=os.environ.get("MONGO_URI")
+    sync_client=MongoClient(host=mongo_uri)
+    # Initialize the MongoDB Checkpointer
+    checkpointer=MongoDBSaver(client=sync_client, db_name="ai_course_generator")
+    
+    # Compile the graph with the checkpointer attached
+    app=workflow.compile(checkpointer=checkpointer)
+
+    # Generate the unique "Saveslot" (thread_id) based on the course name
+    clean_topic=topic.replace(" ","_")
+    thread_id=f"course_generation_{username}_{clean_topic}"
+    config={"configurable":{"thread_id":thread_id}}
+
     try:
-        final_state=await app.ainvoke(input=initial_input)
+        # check the database to see if this course crashed halfway through previously
+        current_state=await app.aget_state(config=config)
+        if len(current_state.next)==0 :  # brand new course since nothing inside the tuple
+            logger.info(msg=f"Starting fresh pipeline for {topic}")
+            final_state=await app.ainvoke(input=initial_input, config=config)
+        else:  # crash has happened and hence None is passed to resume exactly where it left off
+            logger.warning(f"Resuming crashed pipeline for {topic} from node: {current_state.next}")
+            final_state=await app.ainvoke(input=None, config=config)
+
         logger.info(msg="="*60)
         logger.info(msg="✅ FULL COURSE GENERATION COMPLETED SUCCESSFULLY")
         logger.info(msg="="*60)
@@ -111,6 +138,10 @@ async def run_pipeline(topic: str, duration_months: float, off_days: list, start
         logger.info(f"[SUCCESS] The lessons and quizzes have been perfectly written and has been inserted to the database")
     except Exception as e:
         logger.error(msg=f"❌ error during execution: {e}", exc_info=True)
+        os.makedirs("demo_files", exist_ok=True)
+        with open(file="demo_files/mcp_crash_report.txt",mode="w") as f:
+            f.write(f"CRASH REPORT:\n{traceback.format_exc()}")
+
 
 if __name__=="__main__":
     asyncio.run(run_pipeline(

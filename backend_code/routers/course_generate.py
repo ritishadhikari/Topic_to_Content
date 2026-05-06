@@ -26,6 +26,7 @@ async def generate_course(
     background_tasks.add_task(
         func=run_pipeline,
         topic=request.topic,
+        username=current_user.username,
         duration_months=request.duration_months,
         off_days=request.off_days,
         start_date=date.today()
@@ -39,7 +40,7 @@ async def generate_course(
 async def get_course_by_topic(topic: str, current_user:DataBaseUser=Depends(dependency=get_current_user)):
     clean_topic=topic.replace("_"," ")
     cursor=db_state.db.daily_lessons.\
-        find({'course_topic': clean_topic}).\
+        find({'course_topic': clean_topic,'username':current_user.username}).\
             sort(key_or_list="day_number", direction=1)
     lessons=await cursor.to_list(length=180)
 

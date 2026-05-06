@@ -94,3 +94,12 @@ Topic_to_Content/
 ├── api.py
 ├── README.md
 └── requirements.txt
+
+
+Run MongoDB in the container: 
+
+docker exec -it course_generator_db mongosh
+    - rs.initiate()
+    - use ai_course_generator
+    - db.daily_lessons.countDocuments()
+    - db.daily_lessons.find().sort({ generated_at: -1 }).limit(1).pretty()

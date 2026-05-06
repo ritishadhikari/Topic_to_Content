@@ -122,6 +122,7 @@ async def test_get_course_success(async_client):
     test_topic=f"Testing Application {uuid.uuid4().hex[:4]}"
     mock_lesson={
         "course_topic": test_topic,
+        "username": username,
         "day_number": 1,
         "daily_topic": "Intro to Containers",
         "lesson_content":"This is a test lesson",
@@ -130,7 +131,7 @@ async def test_get_course_success(async_client):
     }
 
     await db_state.db.daily_lessons.replace_one(
-        filter={"course_topic": test_topic},
+        filter={"course_topic": test_topic,"username":username},
         replacement=mock_lesson,
         upsert=True
     )

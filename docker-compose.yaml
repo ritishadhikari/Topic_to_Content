@@ -24,6 +24,7 @@ services:
   mongodb:
     image: mongo:latest
     container_name: course_generator_db
+    command: ["--replSet","rs0","--bind_ip_all","--port","27017"]
     ports:
       - "27017:27017"
     volumes:
