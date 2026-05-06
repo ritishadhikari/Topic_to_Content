@@ -11,4 +11,4 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=1
 
-CMD ["python", "mcp_server.py"]
+CMD ["python", "-m", "mcp_code.mcp_server"]
