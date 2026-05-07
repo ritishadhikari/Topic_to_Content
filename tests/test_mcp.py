@@ -35,7 +35,7 @@ async def test_mcp_get_course_summary_not_found(mock_mongo_client, async_client)
     Tests the summary tool when a course does not exists
     """
     mock_instance=mock_mongo_client.return_value  # creating a mock client
-    mock_instance.ai_course_generator=db_state.db  # after creating the fake mock client, we are assigning the db to the mock client which resembles the db of the actual test client; the database is actually real and points to the test database
+    mock_instance.ai_course_generator=db_state.db  # after creating the fake mock client, we are assigning the db to the mock client which is the db of the actual test client; the database is actually real and points to the test database
     
     response=await get_course_summary(topic="NonExistant Course 404")
     assert "No Course found for the topic NonExistant Course 404" in response
