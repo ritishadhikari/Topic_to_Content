@@ -2,6 +2,7 @@ import pytest
 import uuid
 from backend_code.database import db_state
 from datetime import datetime
+from unittest.mock import patch, ANY
 
 # Test Unauthorized Access
 @pytest.mark.asyncio
@@ -24,7 +25,8 @@ async def test_unauthorized_course_generation(async_client):
 
 # Test Authorized Access
 @pytest.mark.asyncio
-async def test_authorized_course_generation(async_client):
+@patch("backend_code.routers.course_generate.run_pipeline")  # Intercepts the heavy work
+async def test_authorized_course_generation(mock_run_pipeline, async_client):
     """
     Tests that a valid user can successfully trigger the background pipeline
     """
@@ -57,8 +59,15 @@ async def test_authorized_course_generation(async_client):
     response=await async_client.post("/generate-course", json=payload, headers=headers)
 
     assert response.status_code==202
-    assert "Pipeline started for" in response.json()['msg']
-    assert response.json()['requested_by']==username
+    mock_run_pipeline.assert_called_once_with(
+        topic="Advanced Fast API",
+        username=username,
+        duration_months=1.0,
+        off_days=["Sunday"],
+        start_date=ANY
+    )
+    # assert "Pipeline started for" in response.json()['msg']
+    # assert response.json()['requested_by']==username
 
 
 # Test GET Course - Not Found

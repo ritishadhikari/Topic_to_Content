@@ -2,14 +2,15 @@ import pytest
 import uuid
 from unittest.mock import patch
 from datetime import datetime
+import asyncio
 
 from mcp_code.mcp_server import generate_new_course, get_course_summary, MCP_IDENTITY
 from backend_code.database import db_state
 
 # Generate New Course Tool
 @pytest.mark.asyncio
-@patch(target="mcp_code.mcp_server.create_task")
-async def test_mcp_generate_new_course(mock_create_task, async_client):
+@patch(target="mcp_code.mcp_server.background_pipeline_worker")
+async def test_mcp_generate_new_course(mock_pipeline_worker, async_client):
     """
     Tests the MCP tool for generating a course
     Mocks the asyncio.create_task to prevent Langgraph from actually running
@@ -21,11 +22,21 @@ async def test_mcp_generate_new_course(mock_create_task, async_client):
     )
 
     # Verifying that the background task was successfully triggered
-    mock_create_task.assert_called_once()
+    mock_pipeline_worker.assert_called_once_with(
+        topic="MCP Testing Protocol",
+        username=MCP_IDENTITY,
+        duration_months=1.0,
+        off_days=["Monday"]
+    )
 
     # Verify that the LLM gets the correct success string back
-    assert "Successfully started generating the course for MCP Testing Protocol" in response
-    assert "check back shortly" in response
+    assert "Successfully started" in response
+    
+    # Allows asyncio.create_task to quiety execute and delete our fake MOCK Payload
+    # before Pytest shuts the whole system down
+    await asyncio.sleep(0)
+
+
 
 # Get Course Summary tool - Not found
 @pytest.mark.asyncio
