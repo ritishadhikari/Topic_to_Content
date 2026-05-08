@@ -1,53 +1,98 @@
 name: Backend CI Pipeline
 
 on: 
-  push:
-    branches: 
-      - main
+
   pull_request:
     branches: 
       - main
 
 jobs:
 
-  test-and-verify:
+  test:
     
     runs-on: ubuntu-latest
 
+    # Spin up a live mongodb container for our hybrid mocks to query
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+    
+    # Provide dummy environment variables for the test suite
+    env:
+      MONGO_URI: mongodb://localhost:27017
+      JWT_SECRET_KEY: test-secret-key-123
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: 120
+      MCP_USER: default_test_user
+      OPENAI_API_KEY: sk-dummy-key
+      TAVILY_API_KEY: tvly-dummy-key
+
     steps:
+
       - name: Checkout Code Repository
         uses: actions/checkout@v4
 
-      - name: Inject Environment Variables
+      - name: Setup Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+      
+      - name: Install Dependencies
         run: |
-          touch .env
-          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> .env
-          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-          echo "ALGORITHM=${{ secrets.ALGORITHM }}" >> .env
-          echo "ACCESS_TOKEN_EXPIRE_MINUTES=${{ secrets.ACCESS_TOKEN_EXPIRE_MINUTES }}" >> .env
-          echo "MCP_USER=ci_test_user" >> .env
-          
-      - name: Build and Test Docker Compose
-        run: docker compose up -d --build 
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
       
-      # Give Mongodb and UviCorn a few seconds to fully boot up
-      - name: Wait for Environment Initialization
-        run: sleep 15
-      
-      - name: Initialize MongoDB Replica Set
+      - name: Run Pytest
         run: |
-          docker exec course_generator_db mongosh --eval "rs.initiate()"
-          sleep 10
-      
-      - name: Execute Pytest
-        run: docker exec topic_to_content pytest -v
+          pytest -v
+  
+  build-and-push:
+    needs: test     # waits for the test to pass
+    runs-on: ubuntu-latest
 
-      - name: Build MCP Server Image
-        run: docker build -t  course-generator-mcp -f Dockerfile.mcp .
+    # Only Push images when code is merged directly into the main branch
+    if: github.ref == 'refs/heads/main'
 
-      - name: Tear Down Containers
-        if: always()
-        run: docker compose down
-          
-
+    permissions:
+      contents: read
+      packages: write
     
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Login to the Github container registry
+        uses: docker/login-action@v3
+        with: 
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+      
+      # Build and Push the FastAPI backend
+      - name: Build and push FastAPI Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}-api:latest
+          labels: ${{ steps.meta.outputs.labels }}
+      
+      # Build and Push the FastMCP Server
+      - name: Build and Push FastMCP Server
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.mcp
+          push: true
+          tags: ghcr.io/${{ github.repository }}-mcp:latest
+          labels: ${{ steps.meta.outputs.labels }}

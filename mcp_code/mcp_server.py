@@ -78,6 +78,8 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
         off_days=off_days
     ))
 
+  
+    
     active_tasks.add(task)
 
     # tell the task to automatically remove itself from the set when it finishes
