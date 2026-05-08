@@ -49,7 +49,7 @@ async def test_mcp_get_course_summary_not_found(mock_mongo_client, async_client)
     mock_instance.ai_course_generator=db_state.db  # after creating the fake mock client, we are assigning the db to the mock client which is the db of the actual test client; the database is actually real and points to the test database
     
     response=await get_course_summary(topic="NonExistant Course 404")
-    assert "No Course found for the topic NonExistant Course 404" in response
+    assert "No course found for the topic NonExistant Course 404" in response
     assert "ask the user if they would want to generate it" in response
 
 # Get Course Tool Success
@@ -76,7 +76,7 @@ async def test_mcp_get_course_summary_success(mock_mongo_client, async_client):
         "generated_at": datetime.now()
     }
 
-    await db_state.db.daily_lessons.insert_one(doc=mock_lesson)
+    await db_state.db.daily_lessons.insert_one(document=mock_lesson)
 
     url_topic=test_topic.replace(" ", "_")
     response=await get_course_summary(topic=url_topic)
