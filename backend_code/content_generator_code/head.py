@@ -50,6 +50,7 @@ class GraphState(BaseModel):
     has_code: bool=False
     is_completed: bool=False
     refresher_questions: str|None=None
+    running_use_case_project: str|None=None
 
 async def input_processor(state:GraphState):
     """
@@ -180,7 +181,8 @@ async def schedule_architect(state: GraphState):
         "full_schedule":skeleton_schedule,
         "current_target_date":first_study_date,
         "day_number":1, 
-        "total_study_days": total_study_days
+        "total_study_days": total_study_days,
+        "running_use_case_project":plan.running_use_case_project
     }
 
 async def daily_content_researcher(state:GraphState):
@@ -231,7 +233,8 @@ async def daily_content_generator(state: GraphState):
     daily_prompt=daily_content_prompt(
         course_topic=state.topic,
         daily_topic=state.current_topic,
-        web_context=state.daily_web_context
+        web_context=state.daily_web_context,
+        running_use_case_project=state.running_use_case_project
         )
     
     response=await llm.ainvoke(input=daily_prompt)
@@ -394,6 +397,7 @@ async def mongo_db_save(state: GraphState):
             document={
                 "course_topic":state.topic,
                 "username": state.username,
+                "running_use_case_project": state.running_use_case_project,
                 "day_number": state.day_number,
                 "daily_topic": state.current_topic,
                 "lesson_content": state.latest_content,

@@ -9,6 +9,9 @@ class DailyTopic(BaseModel):
     topic_title: str=Field(description="The specific sub-topic to study on this day")
 
 class CurriculumPlan(BaseModel):
+    running_use_case_project: str=Field(
+        description="A realistic industy-standard core project or running use-case that the user will incrementally build, apply concepts to, or solve over the duration of the course"
+    )
     daily_topics: List[DailyTopic]=Field(
         description="The complete list of topics. The length of this list MUST exactly match the requested number of study days"
     )

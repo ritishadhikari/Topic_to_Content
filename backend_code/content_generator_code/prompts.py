@@ -8,10 +8,13 @@ def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: s
     {research_notes}
     </research>
 
-    I need a progressive daily syllabus based on the research provided above
+    I need a progressive daily syllabus based on the research provided above.
 
-    CRITICAL INSTRUCTION: You must generate EXACTLY {total_study_days} daily sub-topics.
-    Not one more, not one less. Move from beginner concepts to advanced concepts
+    CRITICAL INSTRUCTION: 
+    1. First, invent a highly engaging, realistic, industry-standard core project or running user-case that the learner will build or apply concepts to over the duration of the course.
+    2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
+    
+    Move from beginner concepts to advanced concepts, keeping the core project context in mind.
     """
 
 def researcher_prompt(topic: str, duration_months: float, web_context: str):
@@ -34,9 +37,15 @@ def researcher_prompt(topic: str, duration_months: float, web_context: str):
     Output a detailed, structured text outline. 
 """
 
-def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str):
+def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str, running_use_case_project):
     return f"""
     You are an expert technical instructor teaching a course on {course_topic}
+    
+    Your entire course follows a highly practical, project-based approach centered around this core running use-case/project:
+    <running_project>
+    {running_use_case_project}
+    </running_project>
+
     Your task is to write a comprehensive, engaging daily lesson for today's specific sub-topic: {daily_topic}
 
     Here is the latest web research, documentation and technical context gathered for this specific topic:
@@ -47,7 +56,7 @@ def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str):
     Instructions:
     1. Write a clear, beginner-friendly introduction to the concept
     2. Explain the core mechanics using the web search provided 
-    3. Include practical examples, analogies and strictly accurate code snippets (if applicable)
+    3. CRITICAL: You MUST explicitly teach today's concept by demonstrating how it applies directly to the running project/use-case. Include practical examples, analogies, and strictly accurate code snippets implementing parts of the project.
     4. Keep the tone encouraging and highly educational
     5. Do not write a generic summary; write an actual, deep-dive textbook-style lesson.
     """

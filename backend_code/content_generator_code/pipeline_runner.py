@@ -147,5 +147,6 @@ if __name__=="__main__":
     asyncio.run(run_pipeline(
         topic="Generative AI with MCP, Langgraph and FastAPI",
         duration_months=1.5,
+        username="default_test_user",
         off_days=["Sunday","Thursday"]
         ))
