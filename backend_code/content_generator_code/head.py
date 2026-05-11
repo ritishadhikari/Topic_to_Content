@@ -6,17 +6,18 @@ from backend_code.content_generator_code.helper_functions import (add_schedules,
 from backend_code.content_generator_code.prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
                      code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
                     refresher_generator_prompt)
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from backend_code.content_generator_code.pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 from motor import motor_asyncio
-from backend_code.content_generator_code.variables import (SCHEDULE_ARCHITECT_MODEL,
-                       DAILY_CONTENT_GENERATOR_MODEL,CODE_PRESENCE_CHECKER_MODEL,
-                       CODE_SYNTAX_CHECKER_MODEL, PEDAGOGICAL_VALIDATOR_MODEL,
-                       REFRESHER_GENERATOR_MODEL
+from backend_code.content_generator_code.variables import (CURRICULUM_RESEARCHER_MODEL,
+                       SCHEDULE_ARCHITECT_MODEL,DAILY_CONTENT_GENERATOR_MODEL,
+                       CODE_PRESENCE_CHECKER_MODEL, CODE_SYNTAX_CHECKER_MODEL, 
+                       PEDAGOGICAL_VALIDATOR_MODEL, REFRESHER_GENERATOR_MODEL
                        )
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 
@@ -101,7 +102,8 @@ async def curriculum_researcher(state: GraphState):
             web_context="No live web data available. Relying on internal knowledge"
 
 
-    llm=ChatOpenAI(model='gpt-4o', temperature=0.2)
+    # llm=ChatOpenAI(model='gpt-4o', temperature=0.2)
+    llm=ChatGoogleGenerativeAI(model=CURRICULUM_RESEARCHER_MODEL, temperature=0.2)
     prompt=researcher_prompt(topic=state.topic, duration_months=state.duration_months, web_context=web_context)
 
     response=await llm.ainvoke(prompt)
@@ -155,7 +157,8 @@ async def schedule_architect(state: GraphState):
     
     logger.info(f"Calculated Timeline: {total_study_days} total exact study days found")
 
-    llm=ChatOpenAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
+    # llm=ChatOpenAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
+    llm=ChatGoogleGenerativeAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=CurriculumPlan)
 
     prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days, research_notes=state.research_notes)
@@ -228,7 +231,8 @@ async def daily_content_generator(state: GraphState):
     """
     logger.info(msg=f"--- [DAILY GENERATOR] WRITING LESSON FOR DAY {state.day_number} ---")
     
-    llm=ChatOpenAI(model=DAILY_CONTENT_GENERATOR_MODEL, temperature=0.3)
+    # llm=ChatOpenAI(model=DAILY_CONTENT_GENERATOR_MODEL, temperature=0.3)
+    llm=ChatGoogleGenerativeAI(model=DAILY_CONTENT_GENERATOR_MODEL, temperature=0.3)
     
     daily_prompt=daily_content_prompt(
         course_topic=state.topic,
@@ -253,7 +257,8 @@ async def code_presence_checker(state: GraphState):
     """
     logger.info(msg=f"---[QA] CHECKING FOR CODE IN DAY {state.day_number} CONTENT")
 
-    llm=ChatOpenAI(model=CODE_PRESENCE_CHECKER_MODEL, temperature=0)
+    # llm=ChatOpenAI(model=CODE_PRESENCE_CHECKER_MODEL, temperature=0)
+    llm=ChatGoogleGenerativeAI(model=CODE_PRESENCE_CHECKER_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=CodePresence)
     code_presence_prompt=code_presence_checker_prompt(content=state.latest_content)
     result= await structured_llm.ainvoke(input=code_presence_prompt)
@@ -270,7 +275,8 @@ async def code_syntax_checker(state: GraphState):
     """
     logger.info(msg="---[QA] VALIDATING CODE SYNTAX & RELEVANCY")
 
-    llm=ChatOpenAI(model=CODE_SYNTAX_CHECKER_MODEL, temperature=0)
+    # llm=ChatOpenAI(model=CODE_SYNTAX_CHECKER_MODEL, temperature=0)
+    llm=ChatGoogleGenerativeAI(model=CODE_SYNTAX_CHECKER_MODEL, temperature=0)
     structured_llm=llm.with_structured_output(schema=SyntaxReview)
     syntax_prompt=syntax_checker_prompt(
         latest_content=state.latest_content,
@@ -300,7 +306,8 @@ async def pedagogical_validator(state: GraphState):
     Acts as Editor-in-Chief. Ensures the text is easy to grasp, uses analogies and maintains a high pedagogical standard. If it faild, it auto-corrects the text in the same pass.
     """
     logger.info(msg="--- [QA] PEDAGOGICAL VALIDATION (EDITIOR-IN-CHIEF) ---")
-    llm=ChatOpenAI(model=PEDAGOGICAL_VALIDATOR_MODEL, temperature=0.4)
+    # llm=ChatOpenAI(model=PEDAGOGICAL_VALIDATOR_MODEL, temperature=0.4)
+    llm=ChatGoogleGenerativeAI(model=PEDAGOGICAL_VALIDATOR_MODEL, temperature=0.4)
     structured_llm=llm.with_structured_output(schema=PedagogicalReview)
 
     pedagogical_prompt=pedagogical_validator_prompt(
@@ -329,7 +336,8 @@ async def refresher_generator(state: GraphState):
     """
     logger.info(msg="--- [Assessment] GENERATING 10 REFRESHER QUESTIONS ---")
 
-    llm=ChatOpenAI(model=REFRESHER_GENERATOR_MODEL, temperature=0.3)
+    # llm=ChatOpenAI(model=REFRESHER_GENERATOR_MODEL, temperature=0.3)
+    llm=ChatGoogleGenerativeAI(model=REFRESHER_GENERATOR_MODEL, temperature=0.3)
 
     structured_llm=llm.with_structured_output(schema=RefresherQuiz)
 
