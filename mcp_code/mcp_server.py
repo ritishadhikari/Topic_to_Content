@@ -164,7 +164,7 @@ async def list_user_courses() -> str:
         if not courses:
             return "The user has not generated any courses yet. Offer to help them plan their first course"
         else:
-            response="** Active User Curriculum Dashboard: \n\n"
+            response="** Active User Curriculum Dashboard: **\n\n"
             for c in courses:
                 project=c.get('running_use_case_project',"No Project specified")
                 response+=f"- **Course Topic**: {c['_id']} \n - **Duration**: {c['total_days']} study days\n - **Overarching Project** {project}\n\n"
