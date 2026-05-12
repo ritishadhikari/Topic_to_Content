@@ -8,7 +8,7 @@ from backend_code.content_generator_code.prompts import (expert_curriculam_promp
                     refresher_generator_prompt)
 # from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from backend_code.content_generator_code.pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
+from backend_code.content_generator_code.course_content_pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 from motor import motor_asyncio
@@ -320,7 +320,7 @@ async def pedagogical_validator(state: GraphState):
     review=await structured_llm.ainvoke(input=pedagogical_prompt)
 
     if review.is_pedagogically_sound:
-        logger.info(msg="Pedagocical check passed: Content is engaging and easy to grasp.")
+        logger.info(msg="Pedagogical check passed: Content is engaging and easy to grasp.")
         return {
         }
     else:
@@ -412,7 +412,7 @@ async def mongo_db_save(state: GraphState):
                 "quiz_content": state.refresher_questions,
                 "generated_at": datetime.now()
                                 }
-            result=await collection.insert_one(document=document)
+            result=await collection.insert_one(document)
             logger.info(msg=f"Successfully synced Day {state.day_number} to MongoDB! Document ID: {result.inserted_id}")
 
             # Close the connection

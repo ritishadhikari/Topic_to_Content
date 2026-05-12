@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from dotenv import load_dotenv
 from backend_code.database import db_state
-from backend_code.pydantic_schema import DataBaseUser
+from backend_code.api_pydantic_schemas import DataBaseUser
 
 load_dotenv()
 
