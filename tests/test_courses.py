@@ -155,3 +155,85 @@ async def test_get_course_success(async_client):
     assert data['course_topic']==test_topic
     assert data['total_lessons']==1
     assert len(data['lessons'])==1
+
+# Test Get User Courses - Empty State
+@pytest.mark.asyncio
+async def test_get_user_courses_empty(async_client):
+    """
+    Tests that a new user with zero generated courses receives a graceful empty list rather than throwing an unexpected 404 error.
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username": username, "password":password})
+    login_res=await async_client.post("/authorize", data={"username":username, "password":password})
+    token=login_res.json()['access_token']
+
+    headers={"Authorization":f"Bearer {token}"}
+    response=await async_client.get("/my-courses", headers=headers)
+
+    assert response.status_code==200
+    data=response.json()
+    assert data['total_courses'] ==0
+    assert data['courses']==[]
+
+
+
+# Test GET User Courses - Success (Syllabus Pre-Load Integrity)
+@pytest.mark.asyncio
+async def test_get_user_courses_success(async_client):
+    """
+    Tests that the aggregation pipeline successfully groups courses, extracts the overarching running project, and populates the pre-loaded syllabus items in sequential order.
+    """
+
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username": username, "password":password})
+    login_res=await async_client.post("/authorize", data={"username":username, "password":password})
+    token=login_res.json()['access_token']
+
+    test_topic=f"Langgraph Framework {uuid.uuid4().hex[:4]}"
+    project_desc="Building a Multi-Agent Support System"
+
+    # Seed two separate days for the same course to verify aggregation and chronological sorting
+
+    lesson_day_2={
+        "course_topic": test_topic,
+        "username": username,
+        "running_use_case_project": project_desc,
+        "day_number": 2,
+        "daily_topic":"Human-in-the-loop validation",
+        "lesson_content":"Content Day 2",
+        "generated_at":datetime.now()
+    }
+
+    lesson_day_1={
+        "course_topic": test_topic,
+        "username": username,
+        "running_use_case_project": project_desc,
+        "day_number": 1,
+        "daily_topic":"Stategraph and Checkpointers",
+        "lesson_content":"Content Day 1",
+        "generated_at":datetime.now()
+    }
+
+    # Insert out-of-order intentionally to test the pipeline's mandatory pre-sorting stage
+    await db_state.db.daily_lessons.insert_many([lesson_day_2, lesson_day_1])
+
+    headers={"Authorization":f"Bearer {token}"}
+    response=await async_client.get("/my-courses", headers=headers)
+
+    assert response.status_code==200
+    data=response.json()
+
+    assert data['total_courses']==1
+    course_item=data["courses"][0]
+    assert course_item['course_topic']==test_topic
+    
+    # Validate syllabus pre-load arrays are perfectly ordered
+    assert len(course_item["syllabus"])==2
+    assert course_item['running_use_case_project']==project_desc
+    assert course_item["syllabus"][0]["day_number"]==1
+    assert course_item['syllabus'][0]["daily_topic"]=="Stategraph and Checkpointers"
+    assert course_item['syllabus'][1]['day_number']==2

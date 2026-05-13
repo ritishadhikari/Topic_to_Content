@@ -2,7 +2,7 @@ import logging
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from backend_code.pydantic_schema import UserCreate, Token
+from backend_code.api_pydantic_schemas import UserCreate, Token
 from backend_code.database import db_state
 from backend_code.security import (
     get_password_hash, verify_password, ACCESS_TOKEN_EXPIRE_MINUTES,

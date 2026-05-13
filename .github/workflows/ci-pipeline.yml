@@ -15,12 +15,6 @@ jobs:
     
     runs-on: ubuntu-latest
 
-    # Spin up a live mongodb container for our hybrid mocks to query
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
     
     # Provide dummy environment variables for the test suite
     env:
@@ -44,12 +38,25 @@ jobs:
           python-version: '3.13'
           cache: 'pip'
       
-      - name: Install Dependencies
+      
+      - name: Start MongoDB Replica Set Container
+        run: |
+          docker run --rm -d -p 27017:27017 --name mongodb mongo:latest --replSet rs0 --bind_ip_all
+          sleep 3
+        
+      - name: Initialize MongoDB Replica Set
+        run: |
+          docker exec mongodb mongosh --eval "rs.initiate({_id:'rs0', members:[{_id:0, host:'localhost:27017'}]})"
+          sleep 3
+
+      - name: Install Application Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
       - name: Run Pytest
+        env:
+          MONGO_URI: "mongodb://localhost:27017/?replicaSet=rs0"
         run: |
           pytest -v
   
@@ -58,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only Push images when code is merged directly into the main branch
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     permissions:
       contents: read
