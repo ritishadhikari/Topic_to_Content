@@ -96,6 +96,9 @@ async def test_mcp_list_user_courses_empty(mock_mongo_client, async_client):
     mock_instance=mock_mongo_client.return_value
     mock_instance.ai_course_generator=db_state.db
 
+    # Explicitly clear any leftover records for this user to guarantee test isolation
+    await db_state.db.daily_lessons.delete_many({'username':MCP_IDENTITY})
+
     response=await list_user_courses()
 
     assert "The user has not generated any courses yet" in response
@@ -158,6 +161,9 @@ async def test_mcp_get_lesson_deep_dive_not_found(mock_mongo_client, async_clien
     mock_instance=mock_mongo_client.return_value
     mock_instance.ai_course_generator=db_state.db
 
+    # Explicitly clear any leftover records for this user to guarantee test isolation
+    await db_state.db.daily_lessons.delete_many({'username':MCP_IDENTITY})
+    
     response=await get_lesson_deep_dive(topic="Missing Topic", day_number=99)
 
     assert "No Content found for Missing Topic" in response
