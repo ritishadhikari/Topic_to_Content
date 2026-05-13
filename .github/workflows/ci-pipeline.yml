@@ -21,6 +21,13 @@ jobs:
         image: mongo:latest
         ports:
           - 27017:27017
+        # Mirroring the development environment
+        options: >-
+          --health-cmd mongostat
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     
     # Provide dummy environment variables for the test suite
     env:
@@ -44,12 +51,18 @@ jobs:
           python-version: '3.13'
           cache: 'pip'
       
-      - name: Install Dependencies
+      - name: Initialize MongoDB Replica set
+        run: |
+          docker exec $(docker ps -q -f ancestor=mongo:latest) mongosh --eval "rs.initiate({_id:'rs0', members:[{_id:0, host:'localhost:27017'}]})"
+          sleep 5
+      - name: Install Application Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
       - name: Run Pytest
+        env:
+          MONGO_URI: "mongodb://localhost:27017/?replicaSet=rs0"
         run: |
           pytest -v
   
@@ -58,7 +71,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Only Push images when code is merged directly into the main branch
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name== 'push'
 
     permissions:
       contents: read

@@ -201,7 +201,7 @@ async def get_lesson_deep_dive(topic: str, day_number: int) -> str:
         if not lesson: 
             return f"No Content found for {clean_topic} on {day_number}. Verify the topic name and day number"
         else:
-            content=f"** Module Content: Day {lesson['day_number']} - {lesson['daily_topic']}**\n"
+            content=f"**Module Content: Day {lesson['day_number']} - {lesson['daily_topic']}**\n"
             content+=f"**Core Course Project Context**: {lesson.get('running_use_case_project','N/A')}\n"
             content+=f"{'='*60}\n\n{lesson.get('lesson_content','No Lesson Text available')}\n\n"
             if lesson.get('quiz_content'):
