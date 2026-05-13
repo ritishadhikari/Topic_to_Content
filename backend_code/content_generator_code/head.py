@@ -107,10 +107,19 @@ async def curriculum_researcher(state: GraphState):
     prompt=researcher_prompt(topic=state.topic, duration_months=state.duration_months, web_context=web_context)
 
     response=await llm.ainvoke(prompt)
+
+    raw_content=response.content
+    if isinstance(raw_content, list):
+        extracted_text=[p['text'] if isinstance(p,dict) and "text" in p else str(p) for p in raw_content]
+        finalContent="\n".join(extracted_text)
+    
+    else:
+       finalContent=str(raw_content) 
+
     logger.info(msg="Research Complete. Up-to-date syllabus outline generated")
 
     return {
-        "research_notes": response.content
+        "research_notes": finalContent
     }
 
 async def schedule_architect(state: GraphState):
