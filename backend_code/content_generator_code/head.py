@@ -242,10 +242,17 @@ async def daily_content_generator(state: GraphState):
         )
     
     response=await llm.ainvoke(input=daily_prompt)
-    logger.info(msg=f"Lesson for Day {state.day_number} successfully generated!")
 
+    raw_content=response.content
+    if isinstance(raw_content, list):
+        extracted_text=[p['text'] if isinstance(p,dict) and "text" in p else str(p) for p in raw_content]
+        finalContent="\n".join(extracted_text)
+    
+    else:
+       finalContent=str(raw_content) 
+    logger.info(msg=f"Lesson for Day {state.day_number} successfully generated!")
     return {
-        "latest_content":response.content
+        "latest_content":finalContent
 
     }
 
