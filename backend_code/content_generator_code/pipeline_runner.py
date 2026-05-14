@@ -32,7 +32,7 @@ async def loop_incrementer(state: GraphState):
     """
     next_day=state.day_number+1
 
-    if next<=3 and next_day<=state.total_study_days:
+    if next_day<=3 and next_day<=state.total_study_days:
         logger.info(msg=f"\n-- [LOOPING] MOVING TO DAY {state.day_number+1} ---")
     else:
         logger.info(msg="\n-- [COMPLETION] STUDY LIMIT REACHED. FINALIZING GRAPH ---")
