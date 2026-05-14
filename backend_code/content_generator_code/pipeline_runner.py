@@ -27,11 +27,17 @@ logger=logging.getLogger("PipelineRunner")
 
 async def loop_incrementer(state: GraphState):
     """
-    Increments the day counter and resets the daily variables so the next iteration of the loop starts fresh
+    Increments the day counter and resets the daily variables cleanly. 
+    Suppresses the looping log if the target limit is already reached
     """
-    logger.info(f"\n-- [LOOPING] MOVING TO DAY {state.day_number+1} ---")
+    next_day=state.day_number+1
+
+    if next<=3 and next_day<=state.total_study_days:
+        logger.info(msg=f"\n-- [LOOPING] MOVING TO DAY {state.day_number+1} ---")
+    else:
+        logger.info(msg="\n-- [COMPLETION] STUDY LIMIT REACHED. FINALIZING GRAPH ---")
     return {
-        'day_number': state.day_number+1,
+        'day_number': next_day,
         'current_topic': None, 
         'daily_web_context': None, 
         'latest_content': None,
