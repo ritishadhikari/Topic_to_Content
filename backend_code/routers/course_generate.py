@@ -1,9 +1,10 @@
 import logging
+import pickle
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
 from backend_code.api_pydantic_schemas import (CourseRequest, DataBaseUser,
-                                              UserCoursesResponse)
+                                              UserCoursesResponse, CourseStatusResponse)
 from backend_code.database import db_state
 from backend_code.security import get_current_user
 from backend_code.content_generator_code.pipeline_runner import run_pipeline
@@ -123,3 +124,74 @@ async def get_course_by_topic(topic: str, current_user:DataBaseUser=Depends(depe
         "total_lessons": len(lessons),
         "lessons": lessons
     }
+
+@router.get(
+    path="/courses/{topic}/status",
+    status_code=status.HTTP_200_OK,
+    response_model=CourseStatusResponse
+)
+async def get_generation_status(
+    topic: str, 
+    current_user: DataBaseUser=Depends(dependency=get_current_user)
+):
+    """
+    Polling Endpoint: Allows the Streamlit UI to check the live background progress of course generation
+    """
+    logger.info(msg=f"Status poll requested by {current_user.username} for topic: {topic}")
+
+    clean_topic=topic.replace("_"," ")
+    thread_topic=topic.replace(" ","_")
+    thread_id=f"course_generation_{current_user.username}_{thread_topic}"
+
+    # Inspect Langgraph's internal checkpoints collection for active thread metadata
+    checkpoint_doc=await db_state.db['checkpoints'].find_one(
+        filter={"thread_id":thread_id},
+        sort=[("checkpoint_id",-1)]
+    )
+
+    day_number=0
+    total_study_days=0
+    pending_tasks=[]
+
+    # safely unpack the stored binary bson payload using pickle
+    if checkpoint_doc and "checkpoint" in checkpoint_doc:
+        raw_binary=checkpoint_doc['checkpoint']
+        try:
+            # Unpack the serialized graph state dictionary
+            checkpoint_data=pickle.loads(raw_binary)
+            
+            pending_tasks=checkpoint_data.get("pending_sends",[])
+            channel_values=checkpoint_data.get("channel_values",{})
+            
+            day_number=channel_values.get("day_number",0)
+            total_study_days=channel_values.get("total_study_days",0)
+            
+        except Exception as e:
+            logger.error(msg=f"Failed to unpickle binary checkpoint payload for {thread_id}: {e}")
+
+    # Verify actual finalized progress by counting documents written to the daily_lessons collection
+    completed_days_count=await db_state.db.daily_lessons.count_documents(
+        filter={"course_topic": clean_topic, "username": current_user.username}
+    )
+
+    active_day=max(day_number,completed_days_count)
+
+    is_finished=False
+    if checkpoint_doc:
+        is_finished=(total_study_days>0 and completed_days_count>=total_study_days) or ( len(pending_tasks)==0 and completed_days_count>0)
+        status_str="COMPLETED" if is_finished else "IN_PROGRESS"
+    elif completed_days_count==0:
+        status_str="NOT_STARTED"
+    elif completed_days_count>0:
+        # Fallback if checkpoint doc is expired/missing but written DB modules exists
+        status_str="COMPLETED"
+        is_finished=True 
+        
+    
+
+    return CourseStatusResponse(
+        status=status_str,
+        current_day=active_day,
+        total_study_days=total_study_days,
+        is_completed=is_finished
+    )
