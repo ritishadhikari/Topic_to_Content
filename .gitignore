@@ -1,8 +1,10 @@
 venv
 .env
+.env*
 demo_files
 demo_files/*
 __pycache__/
 __pycache__
 .pytest_cache
 .pytest_cache/
+claude_desktop_config.json
