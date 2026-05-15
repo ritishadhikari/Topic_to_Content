@@ -4,7 +4,8 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
 from backend_code.api_pydantic_schemas import (CourseRequest, DataBaseUser,
-                                              UserCoursesResponse, CourseStatusResponse)
+                                              UserCoursesResponse, CourseStatusResponse,
+                                              DailyLessonResponse)
 from backend_code.database import db_state
 from backend_code.security import get_current_user
 from backend_code.content_generator_code.pipeline_runner import run_pipeline
@@ -187,11 +188,50 @@ async def get_generation_status(
         status_str="COMPLETED"
         is_finished=True 
         
-    
-
     return CourseStatusResponse(
         status=status_str,
         current_day=active_day,
         total_study_days=total_study_days,
         is_completed=is_finished
     )
+
+
+@router.get(
+    path="/courses/{topic}/day/{day_number}",
+    status_code=status.HTTP_200_OK,
+    response_model=DailyLessonResponse
+)
+async def get_lesson_deep_dive(
+        topic: str, 
+        day_number: int,
+        current_user: DataBaseUser=Depends(dependency=get_current_user)
+):
+    """
+    Granular Load Endpoint: Fetches detailed markdown payload anb training quiz strictly on-demand when clicked in the streamlit UI. 
+    """
+    logger.info(msg=f"Fetching granular module content for {topic}, Day {day_number}")
+
+    clean_topic=topic.replace("_"," ")
+
+    lesson=await db_state.db.daily_lessons.find_one(
+        filter={
+        "course_topic": clean_topic,
+        "username": current_user.username,
+        "day_number": day_number
+    })
+
+    if not lesson:
+        logger.warning(msg=f"Module content missing for {clean_topic} Day {day_number}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Content for Day {day_number} is not available yet"
+        )
+    else:
+        return DailyLessonResponse(
+            course_topic=lesson.get("course_topic", clean_topic),
+            running_use_case_project=lesson.get("running_use_case_project"),
+            day_number=lesson.get("day_number",day_number),
+            daily_topic=lesson.get("daily_topic","Untitled Module"),
+            lesson_content=lesson.get("lesson_content"),
+            quiz_content=lesson.get("quiz_content")
+        )   

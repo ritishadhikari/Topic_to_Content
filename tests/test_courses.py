@@ -237,3 +237,60 @@ async def test_get_user_courses_success(async_client):
     assert course_item["syllabus"][0]["day_number"]==1
     assert course_item['syllabus'][0]["daily_topic"]=="Stategraph and Checkpointers"
     assert course_item['syllabus'][1]['day_number']==2
+
+@pytest.mark.asyncio
+async def test_get_lesson_deep_dive_not_found(async_client):
+    """
+    Tests that requesting a specific day that does not exist returns a 404 error.
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123"
+
+    await async_client.post("/register", json={"username": username, "password":password})
+    login_res=await async_client.post("/authorize", data={"username": username, "password": password})
+    token=login_res.json()['access_token']
+    headers={'Authorization':f"Bearer {token}"}
+
+    response=await async_client.get("/courses/Ghost_Course/day/99", headers=headers)
+    assert response.status_code==404
+    assert "not available yet" in response.json()['detail']
+
+@pytest.mark.asyncio
+async def test_get_lesson_deep_dive_success(async_client):
+    """
+    Tests successfully fetching a specific day's deep dive markdown and quiz
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username": username, "password":password})
+    login_res=await async_client.post("/authorize", data={"username": username, "password": password})
+    token=login_res.json()['access_token']
+    headers={'Authorization':f"Bearer {token}"}
+
+    test_topic=f"Streamlit Dashboard {uuid.uuid4().hex[:4]}"
+
+    # Inject a specific day's module
+    mock_lesson={
+        "course_topic":test_topic,
+        "username":username,
+        "running_use_case_project":"Data Viz App",
+        "day_number":3,
+        "daily_topic":"Session State Management",
+        "lesson_content":"Detailed Markdown about st.session_state",
+        "quiz_content":"Quiz: What does st.session_state do",
+        "generated_at":datetime.now()
+    }
+
+    await db_state.db.daily_lessons.insert_one(mock_lesson)
+
+    url_topic=test_topic.replace(" ","_")
+    response=await async_client.get(f"/courses/{url_topic}/day/3", headers=headers)
+
+    assert response.status_code==200
+    data=response.json()
+
+    assert data['course_topic']==test_topic
+    assert data['day_number']==3
+    assert data['daily_topic']=="Session State Management"
+    assert data['lesson_content']=="Detailed Markdown about st.session_state"
