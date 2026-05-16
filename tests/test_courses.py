@@ -3,6 +3,7 @@ import uuid
 from backend_code.database import db_state
 from datetime import datetime
 from unittest.mock import patch, ANY
+import pickle
 
 # Test Unauthorized Access
 @pytest.mark.asyncio
@@ -294,3 +295,130 @@ async def test_get_lesson_deep_dive_success(async_client):
     assert data['day_number']==3
     assert data['daily_topic']=="Session State Management"
     assert data['lesson_content']=="Detailed Markdown about st.session_state"
+
+@pytest.mark.asyncio
+async def test_get_generation_status_not_started(async_client):
+    """
+    Tests the polling endpoint when a course has neither checkpoints nor DB records.
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username":username, "password":password})
+
+    login_res=await async_client.post("/authorize", data={"username":username, "password": password})
+
+    token=login_res.json()['access_token']
+    headers={"Authorization":f"Bearer {token}"}
+
+    response=await async_client.get("/courses/Brand_New_Course/status", headers=headers)
+
+    assert response.status_code==200
+    
+    data=response.json()
+    assert data['status']=="NOT_STARTED"
+    assert data['current_day']==0
+    assert data['is_completed'] is False
+
+@pytest.mark.asyncio
+async def test_get_generation_status_in_progress(async_client):
+    """
+    Tests the polling endpoint by safely mocking LangGraph's binary Pickling state to simulate a workflow currently stuck on Day 2.
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username":username, "password":password})
+
+    login_res=await async_client.post("/authorize", data={"username":username, "password": password})
+
+    token=login_res.json()['access_token']
+    headers={"Authorization":f"Bearer {token}"}
+
+    test_topic_url="Docker_for_Beginners"
+    thread_id=f"course_generation_{username}_{test_topic_url}"
+    
+    # Creating a fake python dictionary mimicking Langgraph's internal structure
+
+    fake_state_dict={
+        "channel_values":{
+            "day_number": 2,
+            "total_study_days": 5
+        },
+        "pending_sends":['schedule_architect_task_id']  # Simulating active graph routing
+    }
+
+    raw_binary_payload=pickle.dumps(obj=fake_state_dict)
+
+    await db_state.db.checkpoints.insert_one({
+        "thread_id": thread_id,
+        "checkpoint_id":"1e9f4b8s-0000-1111-2222-123456789101",
+        "checkpoint": raw_binary_payload
+    })
+
+    response=await async_client.get(f"/courses/{test_topic_url}/status", headers=headers)
+
+    assert response.status_code==200
+    data=response.json()
+
+    assert data['status']=="IN_PROGRESS"
+    assert data["current_day"]==2
+    assert data['total_study_days']==5
+    assert data['is_completed'] is False
+
+
+@pytest.mark.asyncio
+async def test_get_generation_status_completed(async_client):
+    """
+    Tests the polling endpoint when a course has successfully finished generation
+    Simulates an empty pending_sends queue and a matching database document count
+    """
+    username=f"user_{uuid.uuid4().hex[:8]}"
+    password="SecurePassword123!"
+
+    await async_client.post("/register", json={"username":username, "password":password})
+
+    login_res=await async_client.post("/authorize", data={"username":username, "password": password})
+
+    token=login_res.json()['access_token']
+    headers={"Authorization":f"Bearer {token}"}
+
+    test_topic=f"React Fundamentals {uuid.uuid4().hex[:4]}"
+    test_topic_url=test_topic.replace(" ", "_")
+    thread_id=f"course_generation_{username}_{test_topic_url}"
+
+    # Mock a COMPLETED Langgraph Checkpoint
+    # Notice that "pending_sends" is an empty list, which signals the graph has stopped routing
+
+    fake_state_dict={
+        "channel_values":{
+            "day_number":2,
+            "total_study_days":2
+        }, 
+        "pending_sends":[]
+    }
+
+    raw_binary_payload=pickle.dumps(obj=fake_state_dict)
+
+    await db_state.db.checkpoints.insert_one({
+        "thread_id": thread_id,
+        "checkpoint_id": "final-checkpoint-uuid-000",
+        "checkpoint": raw_binary_payload
+    })
+
+    # Inject the actual written lessons into the database to match total_study_days
+    await db_state.db.daily_lessons.insert_many([
+        {"course_topic": test_topic,"username": username, "day_number": 1},
+        {"course_topic": test_topic,"username": username, "day_number": 2},
+    ])
+
+    response=await async_client.get(f"/courses/{test_topic_url}/status", headers=headers)
+
+
+    assert response.status_code==200
+    data=response.json()
+
+    assert data['status']=="COMPLETED"
+    assert data['current_day']==2
+    assert data['total_study_days']==2
+    assert data['is_completed'] is True
