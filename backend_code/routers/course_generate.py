@@ -1,5 +1,8 @@
 import logging
 import pickle
+import json
+import base64, msgpack
+from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 
@@ -156,19 +159,47 @@ async def get_generation_status(
 
     # safely unpack the stored binary bson payload using pickle
     if checkpoint_doc and "checkpoint" in checkpoint_doc:
-        raw_binary=checkpoint_doc['checkpoint']
-        try:
-            # Unpack the serialized graph state dictionary
-            checkpoint_data=pickle.loads(raw_binary)
+        
+        raw_data=checkpoint_doc['checkpoint']
+        checkpoint_data={}
+
+        if isinstance(raw_data, dict):
+            checkpoint_data=raw_data
+        else:
+            pure_bytes=raw_data if isinstance(raw_data, bytes) else bytes(raw_data)
+
+            try:
+                serde=JsonPlusSerializer()
+                checkpoint_data=serde.loads_typed(("ch_type",pure_bytes))
+            except Exception as e1:
+                try:
+                    decoded_str=pure_bytes.decode('utf-8')
+                    checkpoint_data=json.loads(decoded_str)
+                except Exception as e2:
+                    try:
+                        checkpoint_data=pickle.loads(pure_bytes)
+                    except Exception as e3:
+                        try:
+                            checkpoint_data=base64.b64decode(pure_bytes)
+                        except Exception as e4:
+
+                            logger.error(
+                                msg=f"""
+                                Total Deserialization Failure for {thread_id}
+                                JSONPlus: {e1} \n
+                                JSON: {e2}
+                                Pickle: {e3}
+                                Base64: {e4}
+                                """
+                        )
+
+        pending_tasks=checkpoint_data.get("pending_sends",[])
+        channel_values=checkpoint_data.get("channel_values",{})
+        
+        day_number=channel_values.get("day_number",0)
+        total_study_days=channel_values.get("total_study_days",0)
             
-            pending_tasks=checkpoint_data.get("pending_sends",[])
-            channel_values=checkpoint_data.get("channel_values",{})
-            
-            day_number=channel_values.get("day_number",0)
-            total_study_days=channel_values.get("total_study_days",0)
-            
-        except Exception as e:
-            logger.error(msg=f"Failed to unpickle binary checkpoint payload for {thread_id}: {e}")
+        
 
     # Verify actual finalized progress by counting documents written to the daily_lessons collection
     completed_days_count=await db_state.db.daily_lessons.count_documents(

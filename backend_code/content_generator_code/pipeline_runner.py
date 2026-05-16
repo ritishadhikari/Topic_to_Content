@@ -49,7 +49,7 @@ async def loop_router(state: GraphState):
     """
     Checks if we have reached our study days limit
     """
-    if state.day_number>3 or state.day_number > state.total_study_days: return END
+    if state.day_number>2 or state.day_number > state.total_study_days: return END
     else: return "daily_content_researcher"
 
 workflow=StateGraph(state_schema=GraphState)
