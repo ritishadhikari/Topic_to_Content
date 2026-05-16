@@ -167,10 +167,9 @@ async def get_generation_status(
             checkpoint_data=raw_data
         else:
             pure_bytes=raw_data if isinstance(raw_data, bytes) else bytes(raw_data)
-
             try:
                 serde=JsonPlusSerializer()
-                checkpoint_data=serde.loads_typed(("ch_type",pure_bytes))
+                checkpoint_data=serde.loads_typed(("msgpack",pure_bytes))
             except Exception as e1:
                 try:
                     decoded_str=pure_bytes.decode('utf-8')
@@ -179,18 +178,13 @@ async def get_generation_status(
                     try:
                         checkpoint_data=pickle.loads(pure_bytes)
                     except Exception as e3:
-                        try:
-                            checkpoint_data=base64.b64decode(pure_bytes)
-                        except Exception as e4:
-
-                            logger.error(
-                                msg=f"""
-                                Total Deserialization Failure for {thread_id}
-                                JSONPlus: {e1} \n
-                                JSON: {e2}
-                                Pickle: {e3}
-                                Base64: {e4}
-                                """
+                        logger.error(
+                            msg=f"""
+                            Total Deserialization Failure for {thread_id}
+                            JSONPlus: {e1} \n
+                            JSON: {e2}
+                            Pickle: {e3}
+                            """
                         )
 
         pending_tasks=checkpoint_data.get("pending_sends",[])
