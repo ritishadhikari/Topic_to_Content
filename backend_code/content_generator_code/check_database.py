@@ -19,7 +19,11 @@ async def check_results():
     serde=JsonPlusSerializer()
     checkpont_results=serde.loads_typed(data=('msgpack',raw_data))
     channel_values=checkpont_results['channel_values']
-    return channel_values
+
+    day_number=channel_values.get("day_number",0)
+    total_study_days=channel_values.get("total_study_days",0)
+    
+    return day_number,total_study_days
     
 
 if __name__=="__main__":
