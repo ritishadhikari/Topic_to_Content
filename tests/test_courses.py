@@ -3,7 +3,7 @@ import uuid
 from backend_code.database import db_state
 from datetime import datetime
 from unittest.mock import patch, ANY
-import pickle
+import msgpack
 
 # Test Unauthorized Access
 @pytest.mark.asyncio
@@ -348,12 +348,13 @@ async def test_get_generation_status_in_progress(async_client):
         "pending_sends":['schedule_architect_task_id']  # Simulating active graph routing
     }
 
-    raw_binary_payload=pickle.dumps(obj=fake_state_dict)
+    raw_binary_payload=msgpack.packb(o=fake_state_dict)
 
     await db_state.db.checkpoints.insert_one({
         "thread_id": thread_id,
         "checkpoint_id":"1e9f4b8s-0000-1111-2222-123456789101",
-        "checkpoint": raw_binary_payload
+        "checkpoint": raw_binary_payload,
+        "type":"msgpack"
     })
 
     response=await async_client.get(f"/courses/{test_topic_url}/status", headers=headers)
@@ -398,12 +399,13 @@ async def test_get_generation_status_completed(async_client):
         "pending_sends":[]
     }
 
-    raw_binary_payload=pickle.dumps(obj=fake_state_dict)
+    raw_binary_payload=msgpack.packb(o=fake_state_dict)
 
     await db_state.db.checkpoints.insert_one({
         "thread_id": thread_id,
         "checkpoint_id": "final-checkpoint-uuid-000",
-        "checkpoint": raw_binary_payload
+        "checkpoint": raw_binary_payload,
+        "type": "msgpack"
     })
 
     # Inject the actual written lessons into the database to match total_study_days
