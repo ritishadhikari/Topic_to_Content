@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List,Literal
 
 class UserCreate(BaseModel):
     username: str
@@ -29,3 +30,17 @@ class CourseSummaryItem(BaseModel):
 class UserCoursesResponse(BaseModel):
     total_courses:int
     courses: list[CourseSummaryItem]
+
+class CourseStatusResponse(BaseModel):
+    status:Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "ERROR"]
+    current_day: int
+    total_study_days: int
+    is_completed: bool
+
+class DailyLessonResponse(BaseModel):
+    course_topic: str
+    running_use_case_project: str| None=None
+    day_number: int
+    daily_topic: str
+    lesson_content: str|None
+    quiz_content: str| None=None
