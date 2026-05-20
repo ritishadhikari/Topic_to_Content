@@ -8,7 +8,7 @@ from backend_code.content_generator_code.prompts import (expert_curriculam_promp
                     refresher_generator_prompt)
 # from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
-from backend_code.content_generator_code.course_content_pydantic_schemas import (CurriculumPlan, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
+from backend_code.content_generator_code.course_content_pydantic_schemas import (get_curriculum_plan_schema, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
 from motor import motor_asyncio
@@ -33,25 +33,24 @@ logger=logging.getLogger(name="TopicToContentGraph")
 
 
 class GraphState(BaseModel):
-    topic: str
-    username: str
-    duration_months: float
-    off_days: List[str]
-    start_date: date
-    system_date: date= Field(default_factory=date.today, frozen=True)
-    full_schedule: Annotated[List[Dict], add_schedules] = Field (default_factory=list)
+    topic: str  # entry_node
+    username: str  # entry_node
+    duration_months: float  # entry_node
+    off_days: List[str]  # entry_node, input_processor, shedule_architect
+    start_date: date  # schedule_architect
+    system_date: date= Field(default_factory=date.today, frozen=True)  # curriculum_researcher
+    full_schedule: Annotated[List[Dict], add_schedules] = Field (default_factory=list)  # input_processor, schedule_architect
     
-    research_notes: str| None = None
-    total_study_days:int=0
+    research_notes: str| None = None  # curriculum_researcher
+    total_study_days:int=0  # schedule_architect
     current_topic:str|None=None
     daily_web_context:str|None=None
-    current_target_date: date|None=None
-    day_number: int=0
+    current_target_date: date|None=None  # schedule_architect, 
+    day_number: int=0  # input_processor, shedule_architect
     latest_content: str|None=None
     has_code: bool=False
-    is_completed: bool=False
     refresher_questions: str|None=None
-    running_use_case_project: str|None=None
+    running_use_case_project: str|None=None  # schedule_architect
 
 async def input_processor(state:GraphState):
     """
@@ -69,19 +68,18 @@ async def input_processor(state:GraphState):
     return {
         "off_days" : clean_off_days,
         "day_number": 0,
-        "is_completed": False,
         "full_schedule": []
     }
 
 async def curriculum_researcher(state: GraphState):
     """ 
-    Uses Tavily to search the live web for the most up-to-date course structures, syllabi, and advanced topics before synthesizing the master outline.
+    Uses Brave or Serper to search the live web for the most up-to-date course structures, syllabi, and advanced topics before synthesizing the master outline.
     """
     logger.info(msg="---[RESEARCHING] GATHERING LIVE SYLLABUS DATA")
 
     # search_tool=TavilySearchResults(max_results=4, search_depth="advanced")
     current_year=state.system_date.year
-    search_query=f"Latest Comprehensive syllabus course outline topics for {state.topic} {current_year}"
+    search_query=f"Latest Comprehensive syllabus course outline topics for {state.topic} as of {current_year}"
     logger.info(msg=f"Executing Web Search: {search_query}")
 
     try:
@@ -168,7 +166,8 @@ async def schedule_architect(state: GraphState):
 
     # llm=ChatOpenAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
     llm=ChatGoogleGenerativeAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
-    structured_llm=llm.with_structured_output(schema=CurriculumPlan)
+    DynamicCurriculumPlan=get_curriculum_plan_schema(total_study_days=total_study_days)
+    structured_llm=llm.with_structured_output(schema=DynamicCurriculumPlan)
 
     prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days, research_notes=state.research_notes)
 

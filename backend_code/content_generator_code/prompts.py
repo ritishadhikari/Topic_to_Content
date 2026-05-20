@@ -11,7 +11,7 @@ def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: s
     I need a progressive daily syllabus based on the research provided above.
 
     CRITICAL INSTRUCTION: 
-    1. First, invent a highly engaging, realistic, industry-standard core project or running user-case that the learner will build or apply concepts to over the duration of the course.
+    1. First, invent a highly engaging, realistic, industry-standard running user-case that the learner will build or apply concepts to over the duration of the course.
     2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
     
     Move from beginner concepts to advanced concepts, keeping the core project context in mind.

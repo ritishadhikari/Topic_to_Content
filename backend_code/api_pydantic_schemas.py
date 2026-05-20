@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List,Literal
 
 class UserCreate(BaseModel):
@@ -13,6 +13,14 @@ class CourseRequest(BaseModel):
     topic: str
     duration_months: float
     off_days: list[str]
+
+    @field_validator('off_days')
+    @classmethod
+    def check_max_off_days(cls,v):
+        if len(v)>=7:
+            raise ValueError("You must leave atleast one day for studying!")
+        else:
+            return v
     
 class DataBaseUser(BaseModel):
     username: str

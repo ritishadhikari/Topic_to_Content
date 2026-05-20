@@ -8,13 +8,22 @@ class DailyTopic(BaseModel):
     day_number:int = Field(description="The sequential day number (1,2,3 ...)")
     topic_title: str=Field(description="The specific sub-topic to study on this day")
 
-class CurriculumPlan(BaseModel):
-    running_use_case_project: str=Field(
-        description="A realistic industy-standard core project or running use-case that the user will incrementally build, apply concepts to, or solve over the duration of the course"
-    )
-    daily_topics: List[DailyTopic]=Field(
-        description="The complete list of topics. The length of this list MUST exactly match the requested number of study days"
-    )
+def get_curriculum_plan_schema(total_study_days: int):
+    """
+    Dynamically generates the CurriculumPlan Pydantic schema enforcing
+    strict length requirements based on the calculated study days.
+    """
+    class CurriculumPlan(BaseModel):
+        running_use_case_project: str=Field(
+            description="A realistic industy-standard running use-case that the user will incrementally build, apply concepts to, or solve over the duration of the course"
+        )
+        daily_topics: List[DailyTopic]=Field(
+            description=f"The complete list of topics. The length of this list MUST exactly match {total_study_days} study days.",
+            min_length=total_study_days,
+            max_length=total_study_days
+        )
+        
+    return CurriculumPlan
 
 #############################################################################################
 
