@@ -33,7 +33,7 @@ logger=logging.getLogger(name="TopicToContentGraph")
 
 
 class GraphState(BaseModel):
-    topic: str  # entry_node
+    topic: str  # entry_node, daily_content_generator, code_syntax_checker
     username: str  # entry_node
     duration_months: float  # entry_node
     off_days: List[str]  # entry_node, input_processor, shedule_architect
@@ -43,14 +43,14 @@ class GraphState(BaseModel):
     
     research_notes: str| None = None  # curriculum_researcher
     total_study_days:int=0  # schedule_architect
-    current_topic:str|None=None
-    daily_web_context:str|None=None
+    current_topic:str|None=None  # daily_content_researcher, daily_content_generator, code_syntax_checker
+    daily_web_context:str|None=None  # daily_content_researcher, daily_content_generator
     current_target_date: date|None=None  # schedule_architect, 
     day_number: int=0  # input_processor, shedule_architect
-    latest_content: str|None=None
-    has_code: bool=False
+    latest_content: str|None=None  # daily_content_generator, code_presence_checker, code_syntax_checker
+    has_code: bool=False # code_presence_checker
     refresher_questions: str|None=None
-    running_use_case_project: str|None=None  # schedule_architect
+    running_use_case_project: str|None=None  # schedule_architect, daily_content_generator
 
 async def input_processor(state:GraphState):
     """
@@ -211,19 +211,32 @@ async def daily_content_researcher(state:GraphState):
 
     search_query=f"{todays_topic} in {state.topic} tutorial examples latest"
 
+    concept_query=f"{todays_topic} {state.topic} official documentation architecture explanation"
+
+    practical_query=f"{todays_topic} {state.topic} implementation examples best practices"
+
     try:
         logger.info(msg="Attempting Search with Brave API for Content Generation")
         search_tool=BraveSearchWrapper()
-        web_context=search_tool.run(search_query)
-        # web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
+
+        concept_context=search_tool.run(query=concept_query)
+        practical_context=search_tool.run(query=practical_query)
+        web_context=f"--- THEORITICAL CONTEXT ---\n{concept_context}\n\n--- PRACTICAL CONTEXT ---\n{practical_context}"
+
         logger.info(msg="Brave Web Search Successful")
     except Exception as brave_err:
         logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
         try:  # fallback to Serper API
-            logger.info(msg="Falling Back to Serper API")
+            logger.info(msg="Falling Back to Serper API for Multi-Target Search")
             search_tool=GoogleSerperAPIWrapper(k=4)
-            search_results=search_tool.results(search_query).get("organic",[])
-            web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results])
+            
+            concept_results=search_tool.results(query=concept_query).get('organic',[])
+            concept_context="\n\n".join([res.get('snippet','') for res in concept_results])
+
+            practical_results=search_tool.results(query=practical_query).get('organic',[])
+            practical_context="\n\n".join([res.get('snippet','') for res in practical_results])
+            web_context=f"---THEORITICAL CONTEXT ---\n{concept_context}\n\n---PRACTICAL CONTEXT ---\n{practical_context}"
+            logger.info(msg="SERPER Web Search is Successful")
         except Exception as serper_err:
             logger.warning(msg=f"Serper Search also failed. Error: {serper_err}")
             web_context="No live web data available. Relying on internal knowledge"

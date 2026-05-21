@@ -55,8 +55,8 @@ def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str, 
 
     Instructions:
     1. Write a clear, beginner-friendly introduction to the concept
-    2. Explain the core mechanics using the web search provided 
-    3. CRITICAL: You MUST explicitly teach today's concept by demonstrating how it applies directly to the running project/use-case. Include practical examples, analogies, and strictly accurate code snippets implementing parts of the project.
+    2. Explain the core mechanics using the web_research provided 
+    3. CRITICAL: You MUST explicitly teach today's concept by demonstrating how it applies directly to the running_use_case_project. Include practical examples, analogies, and strictly accurate code snippets implementing parts of the project.
     4. Keep the tone encouraging and highly educational
     5. Do not write a generic summary; write an actual, deep-dive textbook-style lesson.
     """
