@@ -98,7 +98,7 @@ def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_con
     </source_of_truth>
 
     Your criteria for validation:
-    1. Comprehension: Is the content extremely easy to grasp for an intermediate learner?
+    1. Comprehension: Is the content extremely easy to grasp for a beginner to an intermediate learner?
     2. Analogies: Does the lesson use strong, relatable, real-world analogies? (Ensure analogies do not contradict the source of truth)
     3. Cognitive Load: Are paragraphs short and digestible? Is dense jargon explained clearly?
     4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly align with the <source_of_truth> provided above

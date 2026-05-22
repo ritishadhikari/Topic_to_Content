@@ -14,8 +14,6 @@ from backend_code.content_generator_code.head import (
     route_after_code_check, mongo_db_save, state_updater
 )
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
-from backend_code.database import db_state
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from pymongo import MongoClient
 
@@ -32,7 +30,7 @@ async def loop_incrementer(state: GraphState):
     """
     next_day=state.day_number+1
 
-    if next_day<=3 and next_day<=state.total_study_days:
+    if next_day<=2 and next_day<=state.total_study_days:
         logger.info(msg=f"\n-- [LOOPING] MOVING TO DAY {state.day_number+1} ---")
     else:
         logger.info(msg="\n-- [COMPLETION] STUDY LIMIT REACHED. FINALIZING GRAPH ---")

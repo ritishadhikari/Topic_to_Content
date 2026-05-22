@@ -18,7 +18,7 @@ from backend_code.content_generator_code.variables import (CURRICULUM_RESEARCHER
                        PEDAGOGICAL_VALIDATOR_MODEL, REFRESHER_GENERATOR_MODEL
                        )
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+from backend_code.database import db_state 
 
 
 load_dotenv()
@@ -33,24 +33,24 @@ logger=logging.getLogger(name="TopicToContentGraph")
 
 
 class GraphState(BaseModel):
-    topic: str  # entry_node, daily_content_generator, code_syntax_checker
-    username: str  # entry_node
+    topic: str  # entry_node, daily_content_generator, code_syntax_checker, pedagogical_validator, refresher_generator, refresher_generator, mongo_db_save
+    username: str  # entry_node, mongo_db_save
     duration_months: float  # entry_node
     off_days: List[str]  # entry_node, input_processor, shedule_architect
     start_date: date  # schedule_architect
     system_date: date= Field(default_factory=date.today, frozen=True)  # curriculum_researcher
-    full_schedule: Annotated[List[Dict], add_schedules] = Field (default_factory=list)  # input_processor, schedule_architect
+    full_schedule: Annotated[List[Dict], add_schedules] = Field (default_factory=list)  # input_processor, schedule_architect, state_updater
     
     research_notes: str| None = None  # curriculum_researcher
     total_study_days:int=0  # schedule_architect
-    current_topic:str|None=None  # daily_content_researcher, daily_content_generator, code_syntax_checker
-    daily_web_context:str|None=None  # daily_content_researcher, daily_content_generator
+    current_topic:str|None=None  # daily_content_researcher, daily_content_generator, code_syntax_checker, pedagogical_validator, refresher_generator, mongo_db_save, loop_incrementer
+    daily_web_context:str|None=None  # daily_content_researcher, daily_content_generator, pedagogical_validator, loop_incrementer
     current_target_date: date|None=None  # schedule_architect, 
-    day_number: int=0  # input_processor, shedule_architect
-    latest_content: str|None=None  # daily_content_generator, code_presence_checker, code_syntax_checker
-    has_code: bool=False # code_presence_checker
-    refresher_questions: str|None=None
-    running_use_case_project: str|None=None  # schedule_architect, daily_content_generator
+    day_number: int=0  # input_processor, shedule_architect, mongo_db_save, loop_incrementer
+    latest_content: str|None=None  # daily_content_generator, code_presence_checker, code_syntax_checker, pedagogical_validator, refresher_generator, mongo_db_save, loop_incrementer
+    has_code: bool=False # code_presence_checker, loop_incrementer
+    refresher_questions: str|None=None  # refresher_generator, mongo_db_save, loop_incrementer
+    running_use_case_project: str|None=None  # schedule_architect, daily_content_generator, mongo_db_save
 
 async def input_processor(state:GraphState):
     """
@@ -221,7 +221,7 @@ async def daily_content_researcher(state:GraphState):
 
         concept_context=search_tool.run(query=concept_query)
         practical_context=search_tool.run(query=practical_query)
-        web_context=f"--- THEORITICAL CONTEXT ---\n{concept_context}\n\n--- PRACTICAL CONTEXT ---\n{practical_context}"
+        web_context=f"--- THEORETICAL CONTEXT ---\n{concept_context}\n\n--- PRACTICAL CONTEXT ---\n{practical_context}"
 
         logger.info(msg="Brave Web Search Successful")
     except Exception as brave_err:
@@ -422,14 +422,12 @@ async def mongo_db_save(state: GraphState):
 
     logger.info(msg=f"---[SAVING] WRITING DAY {state.day_number} CONTENT TO MONGO_DB")
     try:
-        mongo_uri=os.getenv("MONGO_URI")
-        if not mongo_uri:
-            logger.warning(msg="MONGO_URI not found! Skipping database save.")
+        
+        if db_state.db is None:
+            logger.error(msg="Database connection pool is missing! Skipping save.")
         else:
-            client=motor_asyncio.AsyncIOMotorClient(host=mongo_uri)
             
-            db=client.ai_course_generator
-            collection=db.daily_lessons
+            collection=db_state.db.daily_lessons
             document={
                 "course_topic":state.topic,
                 "username": state.username,
@@ -443,8 +441,6 @@ async def mongo_db_save(state: GraphState):
             result=await collection.insert_one(document)
             logger.info(msg=f"Successfully synced Day {state.day_number} to MongoDB! Document ID: {result.inserted_id}")
 
-            # Close the connection
-            client.close()
     except Exception as e:
         logger.error(f"❌ Failed to save to MongoDB: {e}", exc_info=True)
     return {}
