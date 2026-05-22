@@ -119,6 +119,8 @@ async def run_pipeline(topic: str, username: str,
     # Compile the graph with the checkpointer attached
     app=workflow.compile(checkpointer=checkpointer)
 
+    logger.info(msg=app.get_graph().draw_ascii())
+    
     # Generate the unique "Saveslot" (thread_id) based on the course name
     clean_topic=topic.replace(" ","_")
     thread_id=f"course_generation_{username}_{clean_topic}"
