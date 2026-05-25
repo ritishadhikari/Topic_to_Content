@@ -16,14 +16,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES=int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES",120
 
 oauth2_schema=OAuth2PasswordBearer(tokenUrl="authorize")
 
-def verify_password(plain_password:str, hashed_password:str):
-    """
-    Needed during Authorization
-    """
-    password_bytes=plain_password.encode('utf-8')[:72]
-    hashed_password=hashed_password.encode('utf-8')
-    return bcrypt.checkpw(password=password_bytes,hashed_password=hashed_password)
-
 def get_password_hash(plain_password:str):
     """
     Needed during User Registration
@@ -32,6 +24,14 @@ def get_password_hash(plain_password:str):
     salt=bcrypt.gensalt()
     hashed_password=bcrypt.hashpw(password=password_bytes,salt=salt)
     return hashed_password.decode(encoding='utf-8')
+
+def verify_password(plain_password:str, hashed_password:str):
+    """
+    Needed during Authorization
+    """
+    password_bytes=plain_password.encode('utf-8')[:72]
+    hashed_password=hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password=password_bytes,hashed_password=hashed_password)
 
 
 def create_access_token(data:dict, expires_delta: timedelta|None=None):
@@ -44,6 +44,9 @@ def create_access_token(data:dict, expires_delta: timedelta|None=None):
     return jwt.encode(claims=to_encode,key=JWT_SECRET_KEY,algorithm=ALGORITHM)
 
 async def get_current_user(token: str=Depends(dependency=oauth2_schema)) -> DataBaseUser:
+    """
+    Needed after Authorization when a user tries to use the functional apis
+    """
     try:
         payload=jwt.decode(token=token,key=JWT_SECRET_KEY, algorithms=[ALGORITHM])
         username: str=payload.get('sub')
