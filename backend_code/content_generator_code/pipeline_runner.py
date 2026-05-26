@@ -150,9 +150,28 @@ async def run_pipeline(topic: str, username: str,
 
 
 if __name__=="__main__":
-    asyncio.run(run_pipeline(
-        topic="Generative AI with MCP, Langgraph and FastAPI",
-        duration_months=1.5,
-        username="default_test_user",
-        off_days=["Sunday","Thursday"]
-        ))
+    from backend_code.database import db_state
+    from motor.motor_asyncio import AsyncIOMotorClient
+    from dotenv import load_dotenv
+    load_dotenv()
+
+
+    async def main():
+        # Pre-warm the global db_state bucket for local terminal testing
+        logger.info("Pre-warming db_state connection pool for local script runner...")
+        mongo_uri = os.environ.get("MONGO_URI")
+        db_state.client = AsyncIOMotorClient(host=mongo_uri)
+        db_state.db = db_state.client.ai_course_generator
+
+        try:
+            await run_pipeline(
+                topic="Generative AI with MCP, Langgraph and FastAPI",
+                duration_months=1.5,
+                username="default_test_user",
+                off_days=["Sunday", "Thursday"]
+            )
+        finally:
+            # Cleanly close the pool when the local script finishes
+            db_state.client.close()
+
+    asyncio.run(main=main())

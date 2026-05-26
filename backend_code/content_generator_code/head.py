@@ -426,7 +426,6 @@ async def mongo_db_save(state: GraphState):
         if db_state.db is None:
             logger.error(msg="Database connection pool is missing! Skipping save.")
         else:
-            
             collection=db_state.db.daily_lessons
             document={
                 "course_topic":state.topic,
