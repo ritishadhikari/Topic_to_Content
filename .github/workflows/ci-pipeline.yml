@@ -18,7 +18,7 @@ jobs:
     
     # Provide dummy environment variables for the test suite
     env:
-      MONGO_URI: mongodb://localhost:27017
+      MONGO_URI: "mongodb://localhost:27017/?replicaSet=rs0"
       JWT_SECRET_KEY: test-secret-key-123
       ALGORITHM: HS256
       ACCESS_TOKEN_EXPIRE_MINUTES: 120
@@ -57,8 +57,6 @@ jobs:
           pip install -r requirements.txt
       
       - name: Run Pytest
-        env:
-          MONGO_URI: "mongodb://localhost:27017/?replicaSet=rs0"
         run: |
           pytest -v
   
@@ -88,12 +86,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Extract metadata (tags, labels) for API
+        id: meta-api
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ env.REPO }}
-      
+          images: ghcr.io/${{ env.REPO }}-api
+          tags: |
+
+            # 1. Tag with the short Git commit SHA (e.g., :sha-8a7c2f0)
+            type=sha
+
+            # 2. Add the :latest tag ONLY if pushing to the main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
       # Build and Push the FastAPI backend
       - name: Build and push FastAPI Docker Image
         uses: docker/build-push-action@v5
@@ -101,8 +106,22 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ghcr.io/${{ env.REPO }}-api:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+
+      - name: Extract metadata (tags, labels) for MCP
+        id: meta-mcp
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ env.REPO }}-mcp
+          tags: |
+
+            # 1. Tag with the short Git commit SHA (e.g., :sha-8a7c2f0)
+            type=sha
+
+            # 2. Add the :latest tag ONLY if pushing to the main branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
       
       # Build and Push the FastMCP Server
       - name: Build and Push FastMCP Server
@@ -111,5 +130,5 @@ jobs:
           context: .
           file: ./Dockerfile.mcp
           push: true
-          tags: ghcr.io/${{ env.REPO }}-mcp:latest
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta-mcp.outputs.tags }}
+          labels: ${{ steps.meta-mcp.outputs.labels }}
