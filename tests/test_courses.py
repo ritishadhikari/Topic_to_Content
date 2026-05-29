@@ -175,7 +175,7 @@ async def test_get_user_courses_empty(async_client):
 
     assert response.status_code==200
     data=response.json()
-    assert data['total_courses'] ==0
+    assert data['total_courses']==0
     assert data['courses']==[]
 
 

@@ -14,8 +14,6 @@ from backend_code.content_generator_code.head import (
     route_after_code_check, mongo_db_save, state_updater
 )
 import os
-from motor.motor_asyncio import AsyncIOMotorClient
-from backend_code.database import db_state
 from langgraph.checkpoint.mongodb import MongoDBSaver
 from pymongo import MongoClient
 
@@ -32,7 +30,7 @@ async def loop_incrementer(state: GraphState):
     """
     next_day=state.day_number+1
 
-    if next_day<=3 and next_day<=state.total_study_days:
+    if next_day<=2 and next_day<=state.total_study_days:
         logger.info(msg=f"\n-- [LOOPING] MOVING TO DAY {state.day_number+1} ---")
     else:
         logger.info(msg="\n-- [COMPLETION] STUDY LIMIT REACHED. FINALIZING GRAPH ---")
@@ -121,6 +119,8 @@ async def run_pipeline(topic: str, username: str,
     # Compile the graph with the checkpointer attached
     app=workflow.compile(checkpointer=checkpointer)
 
+    logger.info(msg=app.get_graph().draw_ascii())
+    
     # Generate the unique "Saveslot" (thread_id) based on the course name
     clean_topic=topic.replace(" ","_")
     thread_id=f"course_generation_{username}_{clean_topic}"
@@ -150,9 +150,28 @@ async def run_pipeline(topic: str, username: str,
 
 
 if __name__=="__main__":
-    asyncio.run(run_pipeline(
-        topic="Generative AI with MCP, Langgraph and FastAPI",
-        duration_months=1.5,
-        username="default_test_user",
-        off_days=["Sunday","Thursday"]
-        ))
+    from backend_code.database import db_state
+    from motor.motor_asyncio import AsyncIOMotorClient
+    from dotenv import load_dotenv
+    load_dotenv()
+
+
+    async def main():
+        # Pre-warm the global db_state bucket for local terminal testing
+        logger.info("Pre-warming db_state connection pool for local script runner...")
+        mongo_uri = os.environ.get("MONGO_URI")
+        db_state.client = AsyncIOMotorClient(host=mongo_uri)
+        db_state.db = db_state.client.ai_course_generator
+
+        try:
+            await run_pipeline(
+                topic="Generative AI with MCP, Langgraph and FastAPI",
+                duration_months=1.5,
+                username="default_test_user",
+                off_days=["Sunday", "Thursday"]
+            )
+        finally:
+            # Cleanly close the pool when the local script finishes
+            db_state.client.close()
+
+    asyncio.run(main=main())

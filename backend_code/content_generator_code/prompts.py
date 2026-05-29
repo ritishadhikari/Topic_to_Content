@@ -11,7 +11,7 @@ def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: s
     I need a progressive daily syllabus based on the research provided above.
 
     CRITICAL INSTRUCTION: 
-    1. First, invent a highly engaging, realistic, industry-standard core project or running user-case that the learner will build or apply concepts to over the duration of the course.
+    1. First, invent a highly engaging, realistic, industry-standard running user-case that the learner will build or apply concepts to over the duration of the course.
     2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
     
     Move from beginner concepts to advanced concepts, keeping the core project context in mind.
@@ -55,8 +55,8 @@ def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str, 
 
     Instructions:
     1. Write a clear, beginner-friendly introduction to the concept
-    2. Explain the core mechanics using the web search provided 
-    3. CRITICAL: You MUST explicitly teach today's concept by demonstrating how it applies directly to the running project/use-case. Include practical examples, analogies, and strictly accurate code snippets implementing parts of the project.
+    2. Explain the core mechanics using the web_research provided 
+    3. CRITICAL: You MUST explicitly teach today's concept by demonstrating how it applies directly to the running_use_case_project. Include practical examples, analogies, and strictly accurate code snippets implementing parts of the project.
     4. Keep the tone encouraging and highly educational
     5. Do not write a generic summary; write an actual, deep-dive textbook-style lesson.
     """
@@ -98,7 +98,7 @@ def pedagogical_validator_prompt(course_topic: str, daily_topic: str, lesson_con
     </source_of_truth>
 
     Your criteria for validation:
-    1. Comprehension: Is the content extremely easy to grasp for an intermediate learner?
+    1. Comprehension: Is the content extremely easy to grasp for a beginner to an intermediate learner?
     2. Analogies: Does the lesson use strong, relatable, real-world analogies? (Ensure analogies do not contradict the source of truth)
     3. Cognitive Load: Are paragraphs short and digestible? Is dense jargon explained clearly?
     4. Technical Accuracy: You MUST NOT hallucinate. Any rewrites or additions must perfectly align with the <source_of_truth> provided above

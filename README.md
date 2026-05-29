@@ -64,42 +64,136 @@
     |              v                   v
     |       (Next Iteration)        [ END ]
     ---------------|                 
-    
+
+
+
+                                        +-----------+                
+                                        | __start__ |                             
+                                        +-----------+                             
+                                              *                                   
+                                              *                                   
+                                              *                                   
+                                     +-----------------+                          
+                                     | input_processor |                          
+                                     +-----------------+                          
+                                              *                                   
+                                              *                                   
+                                              *                                   
+                                  +-----------------------+                       
+                                  | curriculum_researcher |                       
+                                  +-----------------------+                       
+                                              *                                   
+                                              *                                   
+                                              *                                   
+                                    +--------------------+                        
+                                    | schedule_architect |                        
+                                    +--------------------+                        
+                                              *                                   
+                                              *                                   
+                                              *                                   
+                                +--------------------------+                      
+                                | daily_content_researcher |                      
+                                +--------------------------+.                     
+                                     ***                     ......               
+                                  ***                              .....          
+                                **                                      ......    
+               +-------------------------+                                    ... 
+               | daily_content_generator |                                      . 
+               +-------------------------+                                      . 
+                            *                                                   . 
+                            *                                                   . 
+                            *                                                   . 
+                +-----------------------+                                       . 
+                | code_presence_checker |                                       . 
+                +-----------------------+                                       . 
+                   ...              ...                                         . 
+                ...                    ...                                      . 
+              ..                          ...                                   . 
++---------------------+                      ..                                 . 
+| code_syntax_checker |                   ...                                   . 
++---------------------+                ...                                      . 
+                   ***              ...                                         . 
+                      ***        ...                                            . 
+                         **    ..                                               . 
+                +-----------------------+                                       . 
+                | pedagogical_validator |                                       . 
+                +-----------------------+                                       . 
+                            *                                                   . 
+                            *                                                   . 
+                            *                                                   . 
+                 +---------------------+                                        . 
+                 | refresher_generator |                                        . 
+                 +---------------------+                                        . 
+                            *                                                   . 
+                            *                                                   . 
+                            *                                                   . 
+                    +----------------+                                          . 
+                    | database_saver |                                          . 
+                    +----------------+                                          . 
+                            *                                                   . 
+                            *                                                   . 
+                            *                                                   . 
+                    +---------------+                                         ... 
+                    | state_updater |                                   ......    
+                    +---------------+                              .....          
+                                     ***                     ......               
+                                        ***            ......                     
+                                           **       ...                           
+                                    +------------------+                          
+                                    | loop_incrementer |                          
+                                    +------------------+                          
+                                              .                                   
+                                              .                                   
+                                              .                                   
+                                         +---------+                              
+                                         | __end__ |                              
+                                         +---------+   
+
 
 Folder Structures as of Now:
+
+## 📂 Project Directory Structure
 
 Topic_to_Content/
 ├── .github/
 │   └── workflows/
 │       └── ci-pipeline.yml
 ├── backend_code/
-│   ├── __init__.py
-│   ├── database.py
-│   ├── pydantic_schema.py
-│   ├── security.py
+│   ├── content_generator_code/
+│   │   ├── check_database.py
+│   │   ├── course_content_pydantic_schemas.py
+│   │   ├── head.py
+│   │   ├── helper_functions.py
+│   │   ├── pipeline_runner.py
+│   │   ├── prompts.py
+│   │   └── variables.py
 │   ├── routers/
-│   │   ├── __init__.py
 │   │   ├── authentication.py
 │   │   └── course_generate.py
-│   └── content_generator_code/
-│       ├── __init__.py
-│       ├── head.py
-│       ├── helper_functions.py
-│       ├── pipeline_runner.py
-│       ├── prompts.py
-│       ├── pydantic_schemas.py
-│       └── variables.py
+│   ├── api_pydantic_schemas.py
+│   ├── database.py
+│   └── security.py
+├── demo_files/
+│   └── mcp_crash_report.txt
+├── mcp_code/
+│   └── mcp_server.py
+├── tests/
+│   ├── conftest.py
+│   ├── test_auth.py
+│   ├── test_courses.py
+│   ├── test_health.py
+│   └── test_mcp.py
+├── .dockerignore
 ├── .env
 ├── .gitignore
 ├── api.py
+├── docker-compose.yaml
+├── Dockerfile
+├── Dockerfile.mcp
 ├── README.md
 └── requirements.txt
 
 
 Run MongoDB in the container: 
 
-docker exec -it course_generator_db mongosh
-    - rs.initiate()
-    - use ai_course_generator
-    - db.daily_lessons.countDocuments()
-    - db.daily_lessons.find().sort({ generated_at: -1 }).limit(1).pretty()
+docker exec course_generator_db mongosh --eval "rs.initiate({_id:'rs0',members:[{_id:0, host:'mongodb:27017'}]})"

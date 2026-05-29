@@ -1,7 +1,6 @@
 import logging
 import pickle
 import json
-import base64, msgpack
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
@@ -110,7 +109,7 @@ async def get_user_courses(current_user: DataBaseUser=Depends(dependency=get_cur
 async def get_course_by_topic(topic: str, current_user:DataBaseUser=Depends(dependency=get_current_user)):
     clean_topic=topic.replace("_"," ")
     cursor=db_state.db.daily_lessons.\
-        find({'course_topic': clean_topic,'username':current_user.username}).\
+        find(filter={'course_topic': clean_topic,'username':current_user.username}).\
             sort(key_or_list="day_number", direction=1)
     lessons=await cursor.to_list(length=None)
 
@@ -210,8 +209,7 @@ async def get_generation_status(
         status_str="NOT_STARTED"
     elif completed_days_count>0:
         # Fallback if checkpoint doc is expired/missing but written DB modules exists
-        status_str="COMPLETED"
-        is_finished=True 
+        status_str="ERROR"
         
     return CourseStatusResponse(
         status=status_str,
@@ -232,7 +230,7 @@ async def get_lesson_deep_dive(
         current_user: DataBaseUser=Depends(dependency=get_current_user)
 ):
     """
-    Granular Load Endpoint: Fetches detailed markdown payload anb training quiz strictly on-demand when clicked in the streamlit UI. 
+    Granular Load Endpoint: Fetches detailed markdown payload and training quiz strictly on-demand when clicked in the streamlit UI. 
     """
     logger.info(msg=f"Fetching granular module content for {topic}, Day {day_number}")
 

@@ -25,6 +25,18 @@ mcp=FastMCP(name="CourseGeneratorServer")
 
 MCP_IDENTITY=os.environ.get("MCP_USER","default_mcp_user")
 
+def get_mcp_db():
+    """
+    Singleton connection manager for the MCP Server
+    Ensures only ONE connection pool is opened and shared across all tools and background tasks.
+    """
+    if db_state.db is None:
+        logger.info(msg="Initializing persistent Mongodb Connection for MCP Server...")
+        mongo_uri=os.environ.get('MONGO_URI')
+        db_state.client=AsyncIOMotorClient(host=mongo_uri)
+        db_state.db=db_state.client.ai_course_generator
+    return db_state
+
 async def background_pipeline_worker(
         topic: str,
         username: str,
@@ -35,11 +47,8 @@ async def background_pipeline_worker(
     Runs the heavy Langgraph Pipeline in the background and manages its own isolated MongoDB connection
     """
     logger.info(msg=f"Background Worker Started for topic: {topic}")
+    get_mcp_db()
     try:
-        # Manually connect to MongoDB since FastAPI's lifespan is not running here
-        mongo_uri=os.environ.get("MONGO_URI")
-        db_state.client=AsyncIOMotorClient(host=mongo_uri)
-        db_state.db=db_state.client.ai_course_generator
         await run_pipeline(
             topic=topic,
             username=username,
@@ -50,11 +59,6 @@ async def background_pipeline_worker(
     except Exception as e:
         logger.error(msg=f"Pipeline failed: {e}",exc_info=True)
         return f"Error: Failed to generate course. {str(e)}"
-    finally:
-        # safely close the connection ONLY when the pipeline is completely finished
-        if db_state.client: db_state.client.close()
-        logger.info(msg="Background worker finished and DB connection closed cleanly")
-        return f"Successfully generated the course for {topic}. The data has been saved to the database."
 
 active_tasks=set()
 # Generate new course
@@ -79,7 +83,6 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
     ))
 
   
-    
     active_tasks.add(task)
 
     # tell the task to automatically remove itself from the set when it finishes
@@ -107,16 +110,14 @@ async def get_course_summary(topic: str) -> str:
     """
     logger.info(msg=f"LLM requested summary for existing course: {topic}")
     try:
-        mongo_uri=os.environ.get("MONGO_URI")
-        db_state.client=AsyncIOMotorClient(host=mongo_uri)
-        db_state.db=db_state.client.ai_course_generator
+        db=get_mcp_db()
 
         clean_topic=topic.replace("_"," ")
-        cursor=db_state.db.daily_lessons.\
+        cursor=db.db.daily_lessons.\
             find(filter={'course_topic':clean_topic,"username":MCP_IDENTITY}).\
                 sort("day_number",1)
         lessons=await cursor.to_list(length=180)
-        db_state.client.close()
+        
 
         if not lessons:
             return f"No course found for the topic {topic}. You should ask the user if they would want to generate it."
@@ -139,9 +140,7 @@ async def list_user_courses() -> str:
     """
     logger.info(msg=f"LLM requested full course list for user: {MCP_IDENTITY}")
     try:
-        mongo_uri=os.environ.get("MONGO_URI")
-        db_state.client=AsyncIOMotorClient(host=mongo_uri)
-        db_state.db=db_state.client.ai_course_generator
+        db=get_mcp_db()
 
         pipeline=[
             {"$match":{"username":MCP_IDENTITY}},
@@ -157,9 +156,8 @@ async def list_user_courses() -> str:
             {"$sort": {"_id":1}}
         ]
 
-        cursor=db_state.db.daily_lessons.aggregate(pipeline)
+        cursor=db.db.daily_lessons.aggregate(pipeline)
         courses=await cursor.to_list(length=None)
-        db_state.client.close()
 
         if not courses:
             return "The user has not generated any courses yet. Offer to help them plan their first course"
@@ -186,17 +184,13 @@ async def get_lesson_deep_dive(topic: str, day_number: int) -> str:
     """
     logger.info(msg=f"LLM requested deep-dive content for {topic}, Day {day_number}")
     try:
-        mongo_uri=os.environ.get("MONGO_URI")
-        db_state.client=AsyncIOMotorClient(host=mongo_uri)
-        db_state.db=db_state.client.ai_course_generator
-
+        db=get_mcp_db()
         clean_topic=topic.replace("_"," ")
-        lesson=await db_state.db.daily_lessons.find_one({
+        lesson=await db.db.daily_lessons.find_one({
             "course_topic": clean_topic,
             "username": MCP_IDENTITY,
             "day_number": day_number
         })
-        db_state.client.close()
 
         if not lesson: 
             return f"No Content found for {clean_topic} on {day_number}. Verify the topic name and day number"
