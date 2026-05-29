@@ -24,6 +24,7 @@ jobs:
       ACCESS_TOKEN_EXPIRE_MINUTES: 120
       MCP_USER: default_test_user
       GOOGLE_API_KEY: sk-dummy-key
+      BRAVE_SEARCH_API_KEY: dummmy-key
       GEMINI_API_KEY: sk-dummy-key
       TAVILY_API_KEY: tvly-dummy-key
       SERPER_API_KEY: dummy-serper-key
