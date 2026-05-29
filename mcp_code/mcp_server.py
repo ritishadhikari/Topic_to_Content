@@ -113,11 +113,11 @@ async def get_course_summary(topic: str) -> str:
         db=get_mcp_db()
 
         clean_topic=topic.replace("_"," ")
-        cursor=db_state.db.daily_lessons.\
+        cursor=db.db.daily_lessons.\
             find(filter={'course_topic':clean_topic,"username":MCP_IDENTITY}).\
                 sort("day_number",1)
         lessons=await cursor.to_list(length=180)
-        db_state.client.close()
+        
 
         if not lessons:
             return f"No course found for the topic {topic}. You should ask the user if they would want to generate it."
@@ -156,7 +156,7 @@ async def list_user_courses() -> str:
             {"$sort": {"_id":1}}
         ]
 
-        cursor=db.daily_lessons.aggregate(pipeline)
+        cursor=db.db.daily_lessons.aggregate(pipeline)
         courses=await cursor.to_list(length=None)
 
         if not courses:
@@ -186,7 +186,7 @@ async def get_lesson_deep_dive(topic: str, day_number: int) -> str:
     try:
         db=get_mcp_db()
         clean_topic=topic.replace("_"," ")
-        lesson=await db_state.db.daily_lessons.find_one({
+        lesson=await db.db.daily_lessons.find_one({
             "course_topic": clean_topic,
             "username": MCP_IDENTITY,
             "day_number": day_number

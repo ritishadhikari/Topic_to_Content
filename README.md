@@ -187,3 +187,6 @@ docker exec -it course_generator_db mongosh
     - use ai_course_generator
     - db.daily_lessons.countDocuments()
     - db.daily_lessons.find().sort({ generated_at: -1 }).limit(1).pretty()
+   
+
+docker exec course_generator_db mongosh --eval "rs.initiate({_id:'rs0',members:[{_id:0, host:'mongodb:27017'}]})"
