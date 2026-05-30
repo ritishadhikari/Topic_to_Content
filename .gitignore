@@ -8,3 +8,4 @@ __pycache__
 .pytest_cache
 .pytest_cache/
 claude_desktop_config.json
+frontend_development_roadmap.txt

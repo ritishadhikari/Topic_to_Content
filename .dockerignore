@@ -7,3 +7,4 @@ tests/
 .git/
 .env
 venv/
+frontend_development_roadmap.txt

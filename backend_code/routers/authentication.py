@@ -27,7 +27,7 @@ async def register_user(user: UserCreate):
         raise HTTPException(status_code=400, detail="Username is already Registered")
     else:
         hashed_password=get_password_hash(plain_password=user.password)
-        user_dict={"username":user.username,"hashed_password":hashed_password}
+        user_dict={"username":user.username,"email":user.email,"hashed_password":hashed_password}
         await db_state.db.users.insert_one(document=user_dict)
         logger.info(msg=f"User {user.username} registered successfully.")
         return {"msg": "User created Successfully"}
