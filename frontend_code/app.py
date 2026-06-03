@@ -19,14 +19,33 @@ if "auth_token" not in st.session_state : st.session_state.auth_token=None
 
 if "username" not in st.session_state:  st.session_state.username=None
 
-if "active_generations" not in st.session_state:
-    st.session_state.active_generations=[]  # memory for background tasks
+if "active_generations" not in st.session_state:    st.session_state.active_generations=[]  # memory for background tasks
+
+if "selected_course" not in st.session_state:   st.session_state.selected_course=None
+
+if "selected_day" not in st.session_state: st.session_state.selected_day=1
+
 
 # Helper function to handle logout
 def logout():
     st.session_state.auth_token=None
     st.session_state.username=None
     # st.rerun()  # callbacks are anyway rerun
+
+def open_course(topic):
+    st.session_state.selected_course=topic
+    st.session_state.selected_day=1
+
+def close_course():
+    st.session_state.selected_course=None
+
+def go_previous_day():
+    st.session_state.selected_day-=1
+
+def go_next_day():
+    st.session_state.selected_day+=1
+
+
 
 # LOGIN & REGISTRY
 
@@ -147,46 +166,100 @@ else:  # Token is valid
     tab_dashboard, tab_generate=st.tabs(tabs=["📚 My Courses", "✨ Generate New Course"])
 
     with tab_dashboard:
-        st.subheader(body="Your learning Paths")
+        if st.session_state.selected_course is None:
+            st.subheader(body="Your learning Paths")
 
-        headers={'Authorization':f"Bearer {st.session_state.auth_token}"}
-        
-        with st.spinner(text="Fetching your customized courses..."):
-            try:
-                response=requests.get(f"{API_URL}/my-courses", headers=headers)
-                if response.status_code==200:
-                    data=response.json()
-                    total_courses=data.get("total_courses",0)
-                    courses=data.get('courses',[])
+            headers={'Authorization':f"Bearer {st.session_state.auth_token}"}
+            
+            with st.spinner(text="Fetching your customized courses..."):
+                try:
+                    response=requests.get(f"{API_URL}/my-courses", headers=headers)
+                    if response.status_code==200:
+                        data=response.json()
+                        total_courses=data.get("total_courses",0)
+                        courses=data.get('courses',[])
 
-                    if total_courses==0:
-                        st.info(body="You haven't generated any courses yet. Head over to the `Generate New Course` tab to get it started")
+                        if total_courses==0:
+                            st.info(body="You haven't generated any courses yet. Head over to the `Generate New Course` tab to get it started")
+                        else:
+                            for course in courses:
+                                topic=course.get('course_topic',"Unknown Topic")
+                                project=course.get('running_use_case_project', 'No Project assigned')
+
+                                with st.expander(f"🎓 {topic}"):
+                                    st.markdown(f"**Capstone Project:** {project}")
+                                    st.write("----")
+
+                                    # display the syllabus
+                                    syllabus=course.get("syllabus",[])
+                                    for day in syllabus:
+                                        day_num=day.get("day_number")
+                                        day_topic=day.get("daily_topic")
+                                        st.write(f"**Day {day_num}:** {day_topic}")
+                                    st.write("")
+                                    
+                                    st.button(label=f"Resume {topic}",key=f"resume_{topic}",type='primary',on_click=open_course, args=(topic,),width="stretch")
+                    elif response.status_code==401:
+                        st.warning(body="Your session has expired. Please login again.")      
+                        logout() 
+                        time.sleep(1)
+                        st.rerun()
                     else:
-                        for course in courses:
-                            topic=course.get('course_topic',"Unknown Topic")
-                            project=course.get('running_use_case_project', 'No Project assigned')
+                        st.error(body=f"Failed to fetch courses. Server responded with {response.status_code}")
+                except requests.exceptions.ConnectionError:
+                    st.error("Cannot connect to the backend server. Is it running?")
+        else:
+            active_topic=st.session_state.selected_course
+            current_day=st.session_state.selected_day
 
-                            with st.expander(f"🎓 {topic}"):
-                                st.markdown(f"**Capstone Project:** {project}")
-                                st.write("----")
+            col_title, col_back=st.columns(spec=[8,2])
+            with col_title: st.subheader(body=f"📖{active_topic}")
+            with col_back:  st.button(label="← Back to Grid", width="stretch", on_click=close_course)
+            
+            st.write("---")
 
-                                # display the syllabus
-                                syllabus=course.get("syllabus",[])
-                                for day in syllabus:
-                                    day_num=day.get("day_number")
-                                    day_topic=day.get("daily_topic")
-                                    st.write(f"**Day {day_num}:** {day_topic}")
-                                st.write("")
-                                # Placeholder for deep dive view later
-                                st.button(label=f"Resume {topic}",key=f"resume_{topic}",type='primary')
-                elif response.status_code==401:
-                    st.warning(body="Your session has expired. Please login again.")      
-                    logout() 
-                else:
-                    st.error(body=f"Failed to fetch courses. Server responded with {response.status_code}")
-            except requests.exceptions.ConnectionError:
-                st.error("Cannot connect to the backend server. Is it running?")
-    
+            col_prev, col_day, col_next=st.columns(spec=[2,4,2])
+            with col_prev:
+                st.button(label="⬅️ Previous Day", disabled=(current_day==1), width="stretch", on_click=go_previous_day)
+
+            with col_day:
+                st.markdown(body=f"<h4 style='text-align: center'>Day {current_day} </h4>", unsafe_allow_html=True)
+            
+            with col_next:
+                st.button(label="Next Day ➡️", width="stretch", on_click=go_next_day)
+
+            st.write("---")
+            
+            # Fetch Mark-down content on-demand
+            with st.spinner(text=f"Loading Day {current_day} materials..."):
+                try:
+                    headers={"Authorization":f"Bearer {st.session_state.auth_token}"}
+                    res=requests.get(url=f"{API_URL}/courses/{active_topic}/day/{current_day}", headers=headers)
+
+                    if res.status_code==200: 
+                        lesson_data=res.json()
+                        
+                        st.markdown(body=f"### {lesson_data.get('daily_topic')}")
+                        st.info(body=f"**Capstone Context**: {lesson_data.get('running_use_case_project')}")
+
+                        tab_lesson, tab_quiz=st.tabs(tabs=["📚 Interactive Lesson", "📝 Daily Quiz"])
+
+                        with tab_lesson: st.markdown(body=lesson_data.get('lesson_content'))
+
+                        with tab_quiz:  st.markdown(body=lesson_data.get('quiz_content'))
+
+                    elif res.status_code==404:
+                        st.warning(body="You have reached the end of this course, or this does not exists yet!")
+                    elif res.status_code==401:
+                        st.warning(body="Session expired.")
+                        logout()
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.error(body=f"Error fetching lesson: {res.status_code}")
+                except requests.exceptions.ConnectionError:
+                    st.error(body="Cannot connect to the server.")
+            
     with tab_generate:
         st.subheader(body="Create a Custom Curriculum")
         with st.form(key="generate_new_form"):
@@ -201,7 +274,7 @@ else:  # Token is valid
                     options=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],
                     default=["Sunday"]
                 )
-            submitted=st.form_submit_button(label="Select Enter/Return to generate your course", width="stretch")
+            submitted=st.form_submit_button(label="Select to generate your course", width="stretch")
         
         if submitted:
             if not course_topic:
@@ -216,21 +289,23 @@ else:  # Token is valid
                     "off_days": off_days
                 }
             
-            with st.spinner(text=f"Generating course for {course_topic} through AI"):
-                try:
-                    trigger_response=requests.post(url=f"{API_URL}/generate-course", json=payloads,headers=headers)
+                with st.spinner(text=f"Generating course for {course_topic} through AI"):
+                    try:
+                        trigger_response=requests.post(url=f"{API_URL}/generate-course", json=payloads,headers=headers)
 
-                    if trigger_response.status_code==202:
-                        st.session_state.active_generations.append(course_topic)
-                        st.success(body=f"Course Genarated set in Progress. Track your course : {course_topic} in the sidebar. You may continue to explore other features in this website")
+                        if trigger_response.status_code==202:
+                            st.session_state.active_generations.append(course_topic)
+                            st.success(body=f"Course Generated set in Progress. Track your course : {course_topic} in the sidebar. You may continue to explore other features in this website")
 
-                        time.sleep(1)
-                        st.rerun()
-                    elif trigger_response.status_code==401:
-                        st.warning(body="Session expired. Please log in.")
-                        logout()
-                    else:
-                        st.error(body=f"Failed to start. Server returned {trigger_response.status_code} error")
+                            time.sleep(1)
+                            st.rerun()
+                        elif trigger_response.status_code==401:
+                            st.warning(body="Session expired. Please log in.")
+                            logout()
+                            time.sleep()
+                            st.rerun()
+                        else:
+                            st.error(body=f"Failed to start. Server returned {trigger_response.status_code} error")
 
-                except requests.exceptions.ConnectionError:
-                    st.error(body="Cannot connect to the server.")
+                    except requests.exceptions.ConnectionError:
+                        st.error(body="Cannot connect to the server.")
