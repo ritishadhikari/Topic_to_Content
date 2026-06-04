@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import os
 import time
+import logging
 
 # PAGE CONFIGURATION
 st.set_page_config(
@@ -9,6 +10,14 @@ st.set_page_config(
     page_icon="🎓",
     layout="centered"
 )
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+
+logger=logging.getLogger(name="KhudseFrontend")
 
 # ENVIRONMENT SETUP
 API_URL=os.environ.get("API_URL","http://localhost:8991")
@@ -88,10 +97,12 @@ if st.session_state.auth_token is None:
                                 data=response.json()
                                 st.session_state.auth_token=data.get('access_token')
                                 st.session_state.username=login_user
+                                logger.info(msg=f"User `{login_user}` authenticated successfully via UI form.")
                                 st.success(body="Login Successful!")
                                 st.rerun()
                             else:
                                 st.error(body="Invalid Username or Password")
+                                logger.warning(msg=f"Failed authentication attempt for username: `{login_user} - Status Code: {response.status_code}`")
                         except requests.exceptions.ConnectionError:
                             st.error(body="Cannot connect to the backend server. Is it running?")
     
@@ -116,10 +127,13 @@ if st.session_state.auth_token is None:
                             
                             if response.status_code in (200,201):
                                 st.success(body="Account created successfully! You may now log in.")
+                                logger.info(msg=f"Account for User `{reg_user}` created successfully")
                             elif response.status_code==400:
                                 st.error(body=response.get("detail","Username already exists!"))
+                                logger.warning(msg=f"Username already exists for the user - {reg_user}")
                             else:
-                                st.error(body="An error occurred during registration.")
+                                st.error(body=f"An error occurred during registration.{response.status_code}")
+                                logger.warning(msg=f"An error occurred during registration. - {response.status_code}")
                         except requests.exceptions.ConnectionError:
                             st.error("Cannot connect to the backend server. Is it running?")
     st.stop()  # if token is not valid, then even after the rerun, should not redirect to the content generation 'else' page
@@ -152,6 +166,7 @@ else:  # Token is valid
                             st.error(body=f"❌**{topic}** failed.")
                             completed_tasks.append(topic)
                 except:
+                    logger.error(f"Tracking thread lost or connection dropped for topic: {topic}")
                     st.warning(body=f"⚠️ Tracking lost for {topic}")
 
             for ct in completed_tasks:
@@ -291,6 +306,7 @@ else:  # Token is valid
             
                 with st.spinner(text=f"Generating course for {course_topic} through AI"):
                     try:
+                        logger.info(msg=f"Dispatching generation request for topic: `{course_topic}` by `{st.session_state.username}`")
                         trigger_response=requests.post(url=f"{API_URL}/generate-course", json=payloads,headers=headers)
 
                         if trigger_response.status_code==202:

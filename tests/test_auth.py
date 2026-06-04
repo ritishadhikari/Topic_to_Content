@@ -7,11 +7,13 @@ import uuid
 async def test_successful_registration(async_client):
     test_username=f"test_user_{uuid.uuid4().hex[:8]}"
     test_password="SuperSecretPassword123!"
+    test_email="test@example.com"
 
     response=await async_client.post(
         "/register",
         json={
             "username":test_username, 
+            "email": test_email,
             "password":test_password
             }
         )
@@ -25,11 +27,13 @@ async def test_successful_registration(async_client):
 async def test_duplicate_registration_fails(async_client):
     test_username=f"test_user_{uuid.uuid4().hex[:8]}"
     test_password="SuperSecretPassword123!"
+    test_email="test@example.com"
 
     # Register for the first time
     await async_client.post(
         "/register",
         json={"username":test_username,
+              "email": test_email,
               "password": test_password}
     )
 
@@ -37,6 +41,7 @@ async def test_duplicate_registration_fails(async_client):
     dupicate_response=await async_client.post(
         "/register",
         json={"username":test_username,
+              "email":test_email,
               "password": test_password}
     )
 
@@ -48,12 +53,14 @@ async def test_duplicate_registration_fails(async_client):
 async def test_successful_authorization(async_client):
     test_username=f"test_user_{uuid.uuid4().hex[:8]}"
     test_password="SuperSecretPassword123!"
+    test_email="test@example.com"
     
     # Register the user so that we have valid credentials to test 
     await async_client.post(
         "/register",
         json={
                 "username":test_username,
+                "email":test_email,
                 "password":test_password
         }
     )
