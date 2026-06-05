@@ -7,7 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend_code/ ./backend_code
+COPY api.py .
 
 EXPOSE 8000
 
