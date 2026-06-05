@@ -206,6 +206,42 @@ async def get_lesson_deep_dive(topic: str, day_number: int) -> str:
         return f"Database Error while fetching daily lessons: {str(e)}"
 
 
+@mcp.resource(uri="khudse://platform/architecture")
+def get_khudse_platform_rules():
+    """
+    Provides the LLM with read-only context about how the Khudse AI Learning Platform operates, so it understands the ecosystem it is interacting with
+    """
+    logger.info(msg="LLM accessed the Khudse architecture resource.")
+
+    return """
+    # Khudse Platform Architecture & Rules
+
+    1. Core Identity: Khudse is an AI-Powered personalized learning platform.
+    2. Generation Engine: Courses are generated asynchronously in the background using a Mixture of Agents
+    3. Infrastructure:
+        - Backend: FastAPI
+        - Database: MongoDB (Checkpoints and Daily lessons)
+        - Frontend: Streamlit with Asynchronous AI polling
+    4. Content Structure: A standard module consists of a comprehensive markdown study guide followed by a daily technical quiz
+    5. State Management: The platform uses Langgraph checkpointer state. Content is strictly finalized in the database only after the heavy LLM generation is completely finished.
+    """
+
+@mcp.prompt()
+def tutor_me(course_topic: str)  -> str:
+    """
+    Creates a pre-written starting message for the user to launch a strict session for a specific generated course
+    """
+
+    return f"""
+    I am currently stufying '{course_topic}' on the Khudse platform.
+
+    Please act as a strict, pedagogical tutor.
+    1. Use the `get_course_summary` and `get_lesson_deep_dive` tools to read my current curriculum.
+    2. Quiz me on the material one question at a time.
+    3. Do not give me the answer immediately. If I get it wrong, give me a hing and make me try again 
+ 
+    """
+
 if __name__=="__main__":
     logger.info(msg="Starting FastMCP Server on STDIO...")
     mcp.run()

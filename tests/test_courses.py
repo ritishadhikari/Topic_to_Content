@@ -34,11 +34,13 @@ async def test_authorized_course_generation(mock_run_pipeline, async_client):
 
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
     await async_client.post(
         "/register",
         json={
             "username": username,
+            "email":email,
             "password":password
         })
     login_res=await async_client.post(
@@ -80,11 +82,13 @@ async def test_get_course_not_found(async_client):
 
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
     await async_client.post(
         "/register",
         json={
             "username": username,
+            "email":email,
             "password":password
         })
     login_res=await async_client.post(
@@ -112,11 +116,13 @@ async def test_get_course_success(async_client):
 
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
     await async_client.post(
         "/register",
         json={
             "username": username,
+            "email":email,
             "password":password
         })
     login_res=await async_client.post(
@@ -165,8 +171,14 @@ async def test_get_user_courses_empty(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username": username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
     login_res=await async_client.post("/authorize", data={"username":username, "password":password})
     token=login_res.json()['access_token']
 
@@ -186,11 +198,18 @@ async def test_get_user_courses_success(async_client):
     """
     Tests that the aggregation pipeline successfully groups courses, extracts the overarching running project, and populates the pre-loaded syllabus items in sequential order.
     """
-
+   
+        
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username": username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
     login_res=await async_client.post("/authorize", data={"username":username, "password":password})
     token=login_res.json()['access_token']
 
@@ -246,8 +265,14 @@ async def test_get_lesson_deep_dive_not_found(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username": username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
     login_res=await async_client.post("/authorize", data={"username": username, "password": password})
     token=login_res.json()['access_token']
     headers={'Authorization':f"Bearer {token}"}
@@ -263,8 +288,14 @@ async def test_get_lesson_deep_dive_success(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username": username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
     login_res=await async_client.post("/authorize", data={"username": username, "password": password})
     token=login_res.json()['access_token']
     headers={'Authorization':f"Bearer {token}"}
@@ -303,8 +334,14 @@ async def test_get_generation_status_not_started(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username":username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
 
     login_res=await async_client.post("/authorize", data={"username":username, "password": password})
 
@@ -327,8 +364,15 @@ async def test_get_generation_status_in_progress(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username":username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
+
 
     login_res=await async_client.post("/authorize", data={"username":username, "password": password})
 
@@ -376,8 +420,15 @@ async def test_get_generation_status_completed(async_client):
     """
     username=f"user_{uuid.uuid4().hex[:8]}"
     password="SecurePassword123!"
+    email="test@example.com"
 
-    await async_client.post("/register", json={"username":username, "password":password})
+    await async_client.post("/register", 
+                            json={
+                                "username": username, 
+                                "email":email,
+                                "password":password}
+                                )
+
 
     login_res=await async_client.post("/authorize", data={"username":username, "password": password})
 

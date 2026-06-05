@@ -1,8 +1,9 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, EmailStr
 from typing import List,Literal
 
 class UserCreate(BaseModel):
     username: str
+    email: EmailStr
     password: str
 
 class Token(BaseModel):
