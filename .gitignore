@@ -9,3 +9,16 @@ __pycache__
 .pytest_cache/
 claude_desktop_config.json
 frontend_development_roadmap.txt
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.json
+*_override.tf
+*_override.json
