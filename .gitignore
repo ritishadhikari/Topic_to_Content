@@ -22,3 +22,7 @@ override.tf
 override.json
 *_override.tf
 *_override.json
+
+
+# Kubernetes
+01-backend-secrets.yaml
