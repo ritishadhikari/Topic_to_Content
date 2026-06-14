@@ -8,7 +8,7 @@ __pycache__
 .pytest_cache
 .pytest_cache/
 claude_desktop_config.json
-frontend_development_roadmap.txt
+development_roadmap.txt
 
 # Terraform
 **/.terraform/
@@ -22,3 +22,7 @@ override.tf
 override.json
 *_override.tf
 *_override.json
+
+
+# Kubernetes
+01-backend-secrets.yaml

@@ -66,7 +66,7 @@ if st.session_state.auth_token is None:
     )
 
     st.markdown(body="""
-                    <p style='text-align:center; color: #94a3b8;'>Your persoanlized Tech Courses powered by AI</p>
+                    <p style='text-align:center; color: #94a3b8;'>Your personalized Tech Courses powered by AI</p>
                 """,
                 unsafe_allow_html=True
                 )
