@@ -27,8 +27,8 @@ spec:
         app: api
     spec:
       containers:
-      - name: backend_api
-        image: ghcr.io/ritishadhikari/topic_to_content-api:sha-latest
+      - name: backend-api
+        image: ghcr.io/ritishadhikari/topic_to_content-api:latest
         ports:
         - containerPort: 8000
         envFrom:
