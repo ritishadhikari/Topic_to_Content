@@ -29,6 +29,7 @@ spec:
       containers:
         - name: frontend
           image: ghcr.io/ritishadhikari/topic_to_content-ui:latest
+          imagePullPolicy: Always
           ports:
             - containerPort: 8501
           env:

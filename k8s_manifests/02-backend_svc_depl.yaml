@@ -29,6 +29,7 @@ spec:
       containers:
       - name: backend-api
         image: ghcr.io/ritishadhikari/topic_to_content-api:latest
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
         envFrom:
