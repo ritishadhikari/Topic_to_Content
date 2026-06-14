@@ -25,4 +25,4 @@ override.json
 
 
 # Kubernetes
-01-backend-secrets.yaml
+01-backend_kub_secrets.yaml
