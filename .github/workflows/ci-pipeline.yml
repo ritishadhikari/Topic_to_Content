@@ -1,5 +1,5 @@
 # CI Pipeline
-name: Backend CI Pipeline
+name: Continuous Integration Pipeline
 
 on: 
   push:

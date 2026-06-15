@@ -1,0 +1,46 @@
+name: Continuous Deployment Pipeline
+
+# triggers the CD pipeline only after the CI pipeline finishes successfully on the main branch
+on:
+    workflow_run:
+        workflows: ['Continuous Integration Pipeline']
+        types:
+            - completed
+        branches:
+            - main
+
+jobs:
+    deploy-to-cluster:
+        # double checking that the CI run actually passed before attempting to deploy
+        if: ${{ github.event.workflow_run.conclusion == 'success'}}
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Install Kubectl
+              uses: azure/setup-kubectl@v3
+              with:
+                version: 'latest'
+
+            - name: Authenticate with K3s Cluster
+              env: 
+                KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+              run: |
+                mkdir -p ~/.kube
+                echo "$KUBE_CONFIG_DATA" > ~/.kube/config
+                chmod 600 ~/.kube/config
+            
+            - name: Apply Infrastructure Changes
+              run: |
+                kubectl apply -f ./k8s_manifests/
+
+            - name: Trigger Rolling Updates
+              run: |
+                # Force the API and Frontend supervisors to pull the new :latest images
+                kubectl rollout restart deployment api
+                kubectl rollout restart deployment frontend
+            
+            
+            - name: Verify Deployment Status
+              run: |
+                kubectl rollout status deployment api
+                kubectl rollout status deployment frontend
