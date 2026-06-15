@@ -1,5 +1,7 @@
 name: Continuous Deployment Pipeline
 
+# after terraform apply we need to use - kubectl apply -f ./k8s_manifests/01-backend_kub_secrets.yaml for the etcd update
+
 # triggers the CD pipeline only after the CI pipeline finishes successfully on the main branch
 on:
     workflow_run:
@@ -18,7 +20,7 @@ jobs:
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
-              
+
             - name: Install Kubectl
               uses: azure/setup-kubectl@v3
               with:
