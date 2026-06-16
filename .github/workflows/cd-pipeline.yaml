@@ -1,7 +1,5 @@
 name: Continuous Deployment Pipeline
 
-# after terraform apply we need to use - kubectl apply -f ./k8s_manifests/01-backend_kub_secrets.yaml for the etcd update
-
 # triggers the CD pipeline only after the CI pipeline finishes successfully on the main branch
 on:
     workflow_run:
@@ -34,6 +32,24 @@ jobs:
                 echo "$KUBE_CONFIG_DATA" > ~/.kube/config
                 chmod 600 ~/.kube/config
             
+            - name: Install Bitnami and Inject Master Key
+              env:
+                BITNAMI_KEY: ${{ secrets.BITNAMI_MASTER_KEY }}
+              run: |
+                # temporarily save the master key from the secret
+                echo "$BITNAMI_KEY" > master-key.yaml
+
+                # inject the master key into the cluster and delete the file
+                kubectl apply -f master-key.yaml
+                rm master-key.yaml
+
+                # install the controller which would automatically adopt the key we injected above
+                kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.1/controller.yaml
+
+                # wake up for the controller to wake up before proceeding
+                kubectl rollout status deployment/sealed-secrets-controller -n kube-system --timeout=120s
+
+            
             - name: Apply Infrastructure Changes
               run: |
                 kubectl apply -f ./k8s_manifests/
@@ -43,7 +59,6 @@ jobs:
                 # Force the API and Frontend supervisors to pull the new :latest images
                 kubectl rollout restart deployment api
                 kubectl rollout restart deployment frontend
-            
             
             - name: Verify Deployment Status
               run: |
