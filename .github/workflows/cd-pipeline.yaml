@@ -1,6 +1,8 @@
 name: Continuous Deployment Pipeline
 
 # triggers the CD pipeline only after the CI pipeline finishes successfully on the main branch
+# can survive a terraform destroy and terraform apply. Only config has to be updated in the secret
+
 on:
     workflow_run:
         workflows: ['Continuous Integration Pipeline']
