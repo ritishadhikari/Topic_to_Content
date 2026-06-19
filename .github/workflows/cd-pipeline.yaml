@@ -41,8 +41,14 @@ jobs:
                 # temporarily save the master key from the secret
                 echo "$BITNAMI_KEY" > master-key.yaml
 
-                # inject the master key into the cluster and delete the file
-                kubectl apply -f master-key.yaml
+                # only apply the key if it does not already exists to prevent resourceVersion conflicts
+                if ! kubectl get secret sealed-secrets-keynfhzm -n kube-system > /dev/null
+                  echo "Injecting Bitnami Master Key..."
+                  kubectl apply -f master-key.yaml
+                else
+                  echo "Bitnami Master Key already exists in the cluster. Skipping injection."
+                fi
+
                 rm master-key.yaml
 
                 # install the controller which would automatically adopt the key we injected above
@@ -55,9 +61,9 @@ jobs:
               run: |
                 # Apply everything EXCEPT the ServiceMonitor first
                 kubectl apply -f ./k8s_manifests/01-backend_sealed_secrets.yaml
-                kubectl apply -f ./k8s_manifests/02-backend-svc-depl.yaml
+                kubectl apply -f ./k8s_manifests/02-backend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/03-frontend_svc_depl.yaml
-                kubectl apply -f ./k8s-manifests/04-ingress.yaml
+                kubectl apply -f ./k8s_manifests/04-ingress.yaml
                 kubectl apply -f ./k8s_manifests/05-monitoring.yaml
 
             - name: Await Prometheus CRD Initialization
@@ -75,7 +81,7 @@ jobs:
             
             - name: Deploy Service Monitors
               run: |
-                kubectl apply -f ./k8s_manifests/06-service-servicemonitors.yaml
+                kubectl apply -f ./k8s_manifests/06-service-servicemonitor.yaml
 
             - name: Trigger Rolling Updates
               run: |
