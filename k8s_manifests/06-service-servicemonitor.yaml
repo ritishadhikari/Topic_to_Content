@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata: 
+  name: backend-api-monitor
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack  # tells the prometheus engine to read it's instructions
+spec:
+  # look into the default namespace
+  namespaceSelector:
+    matchNames:
+      - default
+  selector:
+    matchLabels:
+      app: api
+  endpoints:
+    - port: http-metrics
+      path: /metrics
+      interval: 15s  # scrape frequency
