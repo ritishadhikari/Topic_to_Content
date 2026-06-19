@@ -5,7 +5,7 @@ metadata:
 
 ---
 
-apiVersion: heml.cattle.io/v1
+apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: kube-prometheus-stack

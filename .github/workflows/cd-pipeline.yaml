@@ -50,11 +50,32 @@ jobs:
 
                 # wake up for the controller to wake up before proceeding
                 kubectl rollout status deployment/sealed-secrets-controller -n kube-system --timeout=120s
-
-            
-            - name: Apply Infrastructure Changes
+        
+            - name: Deploy Core Infrastructure & Helm Engine
               run: |
-                kubectl apply -f ./k8s_manifests/
+                # Apply everything EXCEPT the ServiceMonitor first
+                kubectl apply -f ./k8s_manifests/01-backend_sealed_secrets.yaml
+                kubectl apply -f ./k8s_manifests/02-backend-svc-depl.yaml
+                kubectl apply -f ./k8s_manifests/03-frontend_svc_depl.yaml
+                kubectl apply -f ./k8s-manifests/04-ingress.yaml
+                kubectl apply -f ./k8s_manifests/05-monitoring.yaml
+
+            - name: Await Prometheus CRD Initialization
+              run: |
+                echo "Waiting for K3s Helm Controller to download and install Prometheus CRDs"
+                # This loop pings the Kubernetes API every 5 seconds
+                # It blocks the pipeline from moving forward until the CRD exists
+                while ! kubectl get crd servicemonitors.monitoring.coreos.com > /dev/null 2>&1; do
+                  echo "CRDs not ready yet, sleeping 5s..."
+                  sleep 5
+                done
+                echo "Prometheus CRDs are established!"
+                # Add a tiny 10s buffer to ensure the API is ready to accept files
+                sleep 10
+            
+            - name: Deploy Service Monitors
+              run: |
+                kubectl apply -f ./k8s_manifests/06-service-servicemonitors.yaml
 
             - name: Trigger Rolling Updates
               run: |
