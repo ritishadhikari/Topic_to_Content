@@ -24,9 +24,9 @@ spec:
 
     prometheus:
       prometheusSpec:
-      # keep data for only 2 days time period
-      retention: 2d
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: 250m
+        # keep data for only 2 days time period
+        retention: 2d
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 250m
