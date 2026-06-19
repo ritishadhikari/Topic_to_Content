@@ -42,7 +42,7 @@ jobs:
                 echo "$BITNAMI_KEY" > master-key.yaml
 
                 # only apply the key if it does not already exists to prevent resourceVersion conflicts
-                if ! kubectl get secret sealed-secrets-keynfhzm -n kube-system > /dev/null
+                if ! kubectl get secret sealed-secrets-keynfhzm -n kube-system > /dev/null 2>&1; then                   
                   echo "Injecting Bitnami Master Key..."
                   kubectl apply -f master-key.yaml
                 else
