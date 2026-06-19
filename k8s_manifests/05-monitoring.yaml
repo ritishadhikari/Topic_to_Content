@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: monitoring
+
+---
+
+apiVersion: heml.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: kube-prometheus-stack
+  namespace: kube-system
+spec:
+  repo: https://prometheus-community.github.io/helm-charts
+  chart: kube-prometheus-stack
+  targetNamespace: monitoring
+  valuesContent: |-
+
+    alertmanager:
+      enabled: false
+    
+    grafana:
+      enabled: true
+
+    prometheus:
+      prometheusSpec:
+      # keep data for only 2 days time period
+      retention: 2d
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 250m
