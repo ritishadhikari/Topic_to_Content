@@ -14,7 +14,7 @@ on:
 jobs:
     deploy-to-cluster:
         # double checking that the CI run actually passed before attempting to deploy
-        if: ${{ github.event.workflow_run.conclusion == 'success'}}
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'}}
         runs-on: ubuntu-latest
 
         steps:
