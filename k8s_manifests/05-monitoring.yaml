@@ -21,6 +21,8 @@ spec:
     
     grafana:
       enabled: true
+      adminUser: "ritishadhikari"
+      adminPassword: "khudsegrafana"
 
     prometheus:
       prometheusSpec:
