@@ -26,3 +26,5 @@ override.json
 
 # Kubernetes
 01-backend_kub_secrets.yaml
+
+dashboard-1782049472808.json

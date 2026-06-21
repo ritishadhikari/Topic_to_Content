@@ -82,6 +82,7 @@ jobs:
             - name: Deploy Service Monitors
               run: |
                 kubectl apply -f ./k8s_manifests/06-service-servicemonitor.yaml
+                kubectl apply -f ./k8s_manifests/07-grafana-dashboard.yaml
 
             - name: Trigger Rolling Updates
               run: |
