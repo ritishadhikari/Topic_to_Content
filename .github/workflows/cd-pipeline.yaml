@@ -60,12 +60,12 @@ jobs:
             - name: Deploy Core Infrastructure & Helm Engine
               run: |
                 # Apply everything EXCEPT the ServiceMonitor first
+                kubectl apply -f ./k8s_manifests/05-monitoring.yaml
                 kubectl apply -f ./k8s_manifests/01-backend_sealed_secrets.yaml
                 kubectl apply -f ./k8s_manifests/02-backend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/03-frontend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/04-ingress.yaml
-                kubectl apply -f ./k8s_manifests/05-monitoring.yaml
-
+                
             - name: Await Prometheus CRD Initialization
               run: |
                 echo "Waiting for K3s Helm Controller to download and install Prometheus CRDs"
