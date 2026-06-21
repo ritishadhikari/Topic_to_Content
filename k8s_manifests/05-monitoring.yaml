@@ -21,8 +21,10 @@ spec:
     
     grafana:
       enabled: true
-      adminUser: "ritishadhikari"
-      adminPassword: "khudsegrafana"
+      admin:
+        existingSecret: "grafana-admin-credentials"
+        userKey: admin-user
+        passwordKey: admin-password
 
     prometheus:
       prometheusSpec:
