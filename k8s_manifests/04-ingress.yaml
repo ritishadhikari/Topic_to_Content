@@ -26,16 +26,16 @@ metadata:
   namespace: monitoring  # must live in the same namespace as the engine
   annotations:
     ingressClassName: "traefik"
-  spec:
-    rules:
-    # Using a wildcard DNS routing trick for AWS EC2 testing
-    - host: grafana.13.203.26.32.nip.io
-      http:
-        paths:
-        - path: /
-          pathType: Prefix
-          backend:
-            service:
-              name: khudse-backend-monitor-grafana
-              port:
-                number: 80
+spec:
+  rules:
+  # Using a wildcard DNS routing trick for AWS EC2 testing
+  - host: grafana.13.203.26.32.nip.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: khudse-backend-monitor-grafana
+            port:
+              number: 80
