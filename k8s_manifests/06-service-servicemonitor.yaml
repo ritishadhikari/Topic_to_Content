@@ -4,7 +4,7 @@ metadata:
   name: backend-api-monitor
   namespace: monitoring
   labels:
-    release: kube-prometheus-stack  # tells the prometheus engine to read it's instructions
+    release: khudse-backend-monitor  # tells the prometheus engine to read it's instructions
 spec:
   # look into the default namespace
   namespaceSelector:
