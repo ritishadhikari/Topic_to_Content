@@ -35,6 +35,7 @@ spec:
           repeat_interval: 4h
           receiver: 'email-alerts'
         receivers:
+        - name: 'null'
         - name: 'email-alerts'
           email_configs:
           - to: 'adhikari_ritish@rediffmail.com'
