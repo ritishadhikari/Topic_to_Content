@@ -17,8 +17,27 @@ spec:
   valuesContent: |-
 
     alertmanager:
-      enabled: false
-    
+      enabled: true
+      config:
+        global:
+          resolve_timeout: 5m
+          smtp_smarthost: 'smtp.gmail.com:587'
+          smtp_from: 'ritishadhikari@gmail.com'
+          smtp_auth_username: 'ritishadhikari@gmail.com'
+          smpt_auth_password: 'jajrerrwtzphxxul'
+        route:
+          group_by: ['alertname', 'job']
+          group_wait: 30s
+          group_interval: 5m  # will send new failures only after 5 minutes
+          repeat_interval: 4h
+          receiver: 'email-alerts'
+        receivers:
+        - name: 'email-alerts'
+          email_configs:
+          - to: 'adhikari_ritish@rediffmail.com'
+            send_resolved: true
+          - to: 'radhik0607@gmail.com'
+            send_resolved: true   
     grafana:
       enabled: true
       admin:

@@ -1,0 +1,48 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: khudse-tripwires
+  namespace: monitoring
+  labels:
+    release: khudse-backend-monitor
+spec:
+  groups:
+    - name: khudse.rules
+      rules:
+      # Tripwire 1: Frontend Crash Loop
+      - alert: FrontendRestartLoop
+        expr: sum(changes(kube_pod_container_status_restarts_total{namespace="default", container="frontend"}[3m])) by (pod) >3
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Frontend Pod is Crash Looping"
+          description: "The Streamlit frontend pod {{ $labels.pod }} has continously restarted over the last 3 minutes. The UI may be down"
+      # Tripwire 2: EC2 Disk Space Critical
+      - alert: EC2DiskSpaceRunningOut
+        expr: (node_filesystem_avail_bytes{fstype!~"tmpfs|ramfs", job="node-exporter"} / node_filesystem_size_bytes{fstype!~"tmpfs|ramfs", job="node-exporter"} * 100) < 15
+        for: 5m
+        labels: 
+          severity: warning
+        annotations:
+          summary: "EC2 Instance disk space is critically low"
+          description: "Less than 15% disk space remains on the Node. Free up space of upgrade volume immediately"
+      # Tripwire 3: Backend Crash Loop
+      - alert: BackendRestartLoop
+        expr: sum(changes(kube_pod_container_status_restarts_total{namespace="default", container=~".*api.*"}[3m])) by (pod) >0
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend API Pod is crash Looping"
+          description: "The backend pod {{ $labels.pod }} has continously restarted over the last 3 minutes. The UI will fail to generate courses."
+      # Tripwire 4: High 5xx Error Rate (Code/Database Crashes)
+      - alert:  HighAPIErrorRate
+        # Triggers if any endpoint throws continuous 5xx errors for 2 minutes
+        expr: sum(rate(http_requests_total{namespace="default",service="api", status=~"5.."}[2m])) by (handler) >0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx Error Rate on API Endpoint"
+          description: "The backend API is throwing 5xx server errors on the {{ $labels.handler }} route. Check the FastAPI logs immediately"
