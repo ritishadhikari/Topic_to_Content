@@ -18,13 +18,16 @@ spec:
 
     alertmanager:
       enabled: true
+      alertmanagerSpec:
+        secrets:
+          - alertmanager-credentials
       config:
         global:
           resolve_timeout: 5m
           smtp_smarthost: 'smtp.gmail.com:587'
           smtp_from: 'ritishadhikari@gmail.com'
           smtp_auth_username: 'ritishadhikari@gmail.com'
-          smpt_auth_password: 'jajrerrwtzphxxul'
+          smtp_auth_password_file: '/etc/alertmanager/secrets/alertmanager-credentials/smtp_auth_password'
         route:
           group_by: ['alertname', 'job']
           group_wait: 30s
