@@ -17,7 +17,7 @@ app=FastAPI(title="Khudse API", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=['*'],
     allow_headers=["*"]
 )
@@ -32,7 +32,7 @@ async def health_check():
         try:
             # Send a Lightweight Ping to Mongodb
             await db_state.db.command("ping")
-            db_status="Connected"
+            db_status="connected"
         except Exception:   db_status="error"
     return {
         "api_status":"ok",

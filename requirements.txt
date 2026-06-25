@@ -26,3 +26,4 @@ streamlit==1.58.0
 requests==2.33.1
 email-validator==2.3.0
 prometheus-fastapi-instrumentator==7.0.0
+locust==2.44.4

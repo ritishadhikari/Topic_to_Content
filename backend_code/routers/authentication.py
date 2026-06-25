@@ -18,16 +18,20 @@ logging.basicConfig(
 logger=logging.getLogger(name="AuthRouter")
 router=APIRouter(tags=["Authentication"])
 
-@router.post(path="/register", status_code=status.HTTP_201_CREATED,)
+@router.post(path="/register", status_code=status.HTTP_201_CREATED)
 async def register_user(user: UserCreate):
-    logger.info(msg=f"Attemting to register user: {user.username}")
+    logger.info(msg=f"Attempting to register user: {user.username}")
     existing_user=await db_state.db.users.find_one({"username":user.username})
     if existing_user is not None:
         logger.warning(msg=f"Registration failed. Username: {user.username} already exists in the database")
         raise HTTPException(status_code=400, detail="Username is already Registered")
     else:
         hashed_password=get_password_hash(plain_password=user.password)
-        user_dict={"username":user.username,"email":user.email,"hashed_password":hashed_password}
+        user_dict={
+                    "username":user.username,
+                    "email":user.email,
+                    "hashed_password":hashed_password
+                   }
         await db_state.db.users.insert_one(document=user_dict)
         logger.info(msg=f"User {user.username} registered successfully.")
         return {"msg": "User created Successfully"}
