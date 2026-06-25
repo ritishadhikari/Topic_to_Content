@@ -29,7 +29,7 @@ metadata:
 spec:
   rules:
   # Using a wildcard DNS routing trick for AWS EC2 testing
-  - host: grafana.65.2.153.162.nip.io
+  - host: grafana.3.7.249.2.nip.io
     http:
       paths:
       - path: /
