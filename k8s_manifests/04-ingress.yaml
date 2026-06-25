@@ -5,9 +5,19 @@ metadata:
   annotations:
     # explicitly telling K3s to use its built-in Traefik proxy
     ingressClassName: "traefik"
+    # this annotation will trigger cert-manager to issue an https certificate from the letsencrypt website
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec: 
+  tls:
+  - hosts:
+        # Tells the ingress to generate an HTTPS certificate for this specific domain
+      - khudse.duckdns.org  
+    # Cert Manager will safely store the keys in this secret0
+    secretName: khudse-frontend-tls  
   rules:
-  - http:
+    # be very specific to the domain name
+  - host: khudse.duckdns.org
+    http:
       paths:
       - path: /
         pathType: Prefix  # alternate is EXACT
@@ -29,7 +39,8 @@ metadata:
 spec:
   rules:
   # Using a wildcard DNS routing trick for AWS EC2 testing
-  - host: grafana.3.7.249.2.nip.io
+
+  - host: grafana.khudse.duckdns.org  # grafana.3.7.249.2.nip.io
     http:
       paths:
       - path: /

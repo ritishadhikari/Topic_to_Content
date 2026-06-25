@@ -1,0 +1,17 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer  # for all the namespace and not just default
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: ritishadhikari@gmail.com
+    privateKeySecretRef:
+      # in the first attempt, cert-manager will send the public key to letsencrypt
+      # while sending the hostname, it will also send the private key which matches the public key
+      name: letsencrypt-prod-private-key
+    # when lets encrypt will want to locate the shared puzzle in the webserver spun by the kubernetes server, it will access through traefik
+    solvers:
+    - http01:
+        ingress: 
+          class: traefik
