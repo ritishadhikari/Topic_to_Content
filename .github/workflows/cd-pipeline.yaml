@@ -56,7 +56,19 @@ jobs:
 
                 # wake up for the controller to wake up before proceeding
                 kubectl rollout status deployment/sealed-secrets-controller -n kube-system --timeout=120s
-        
+            
+            - name: Install Cert-Manager
+              run: |
+                # Add the official Cert-Manager Helm repository
+                helm repo add jetstack https://charts.jetstack.io
+                helm repo update
+
+                # Install Cert-Manager into the cluster
+                helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true --wait
+                
+                # applying the certificate issuer first so that it can watch for the ingress sharing the same metadata name as this cert-issuer.yaml
+                kubectl apply -f ./k8s_manifests/09-cert-issuer.yaml
+
             - name: Deploy Core Infrastructure & Helm Engine
               run: |
                 # Apply everything EXCEPT the ServiceMonitor first
