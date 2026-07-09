@@ -36,10 +36,14 @@ metadata:
   namespace: monitoring  # must live in the same namespace as the engine
   annotations:
     ingressClassName: "traefik"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
+  tls:
+  - hosts: 
+    - grafana.khudse.duckdns.org
+    secretName: grafana-tls
   rules:
   # Using a wildcard DNS routing trick for AWS EC2 testing
-
   - host: grafana.khudse.duckdns.org  # grafana.3.7.249.2.nip.io
     http:
       paths:
