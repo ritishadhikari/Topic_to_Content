@@ -98,6 +98,7 @@ workflow.add_conditional_edges(
 
 async def run_pipeline(topic: str, username: str, 
                        duration_months: float, off_days: list, 
+                       running_use_case_project: str|None=None,
                        start_date: date=date.today()):
     logger.info(msg="="*60)
     logger.info(msg=f"STARTING LANGGRAPH FULL PIPELINE FOR {topic.upper()}")
@@ -108,7 +109,8 @@ async def run_pipeline(topic: str, username: str,
         "username": username,
         "duration_months": duration_months,
         "off_days":off_days,
-        "start_date": start_date
+        "start_date": start_date,
+        "running_use_case_project": running_use_case_project
     }
 
     mongo_uri=os.environ.get("MONGO_URI")
@@ -168,7 +170,8 @@ if __name__=="__main__":
                 topic="Generative AI with MCP, Langgraph and FastAPI",
                 duration_months=1.5,
                 username="default_test_user",
-                off_days=["Sunday", "Thursday"]
+                off_days=["Sunday", "Thursday"],
+                running_use_case_project="Building an Automated Enterprise AI Agent Platform"
             )
         finally:
             # Cleanly close the pool when the local script finishes

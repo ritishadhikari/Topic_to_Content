@@ -166,10 +166,15 @@ async def schedule_architect(state: GraphState):
 
     # llm=ChatOpenAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
     llm=ChatGoogleGenerativeAI(model=SCHEDULE_ARCHITECT_MODEL, temperature=0)
-    DynamicCurriculumPlan=get_curriculum_plan_schema(total_study_days=total_study_days)
+    
+    user_provided_project=bool(state.running_use_case_project)
+    DynamicCurriculumPlan=get_curriculum_plan_schema(total_study_days=total_study_days,has_user_project=user_provided_project)
     structured_llm=llm.with_structured_output(schema=DynamicCurriculumPlan)
 
-    prompt=expert_curriculam_prompt(topic=state.topic,total_study_days=total_study_days, research_notes=state.research_notes)
+    prompt=expert_curriculam_prompt(topic=state.topic,
+                                    total_study_days=total_study_days, 
+                                    research_notes=state.research_notes,
+                                    user_project=state.running_use_case_project)
 
     logger.info(msg=f"Requesting exactly {total_study_days} topics from LLM...")
     
@@ -188,12 +193,14 @@ async def schedule_architect(state: GraphState):
 
     logger.info(f"Master Plan complete. Setting initial target date to {first_study_date}")
 
+    final_project=state.running_use_case_project if user_provided_project else plan.running_use_case_project
+
     return {
         "full_schedule":skeleton_schedule,
         "current_target_date":first_study_date,
         "day_number":1, 
         "total_study_days": total_study_days,
-        "running_use_case_project":plan.running_use_case_project
+        "running_use_case_project":final_project
     }
 
 async def daily_content_researcher(state:GraphState):
