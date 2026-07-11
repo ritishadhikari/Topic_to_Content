@@ -1,3 +1,5 @@
+from threading import activeCount
+
 import streamlit as st
 import requests
 import os
@@ -152,6 +154,7 @@ else:  # Token is valid
             # Poll the backend for each course currently in memory
             for topic in st.session_state.active_generations:
                 try:
+                    url_topic=topic.replace(" ","_")
                     poll_res=requests.get(f"{API_URL}/courses/{topic}/status", headers=headers)
                     if poll_res.status_code==200:
                         data=poll_res.json()
@@ -249,6 +252,7 @@ else:  # Token is valid
             with st.spinner(text=f"Loading Day {current_day} materials..."):
                 try:
                     headers={"Authorization":f"Bearer {st.session_state.auth_token}"}
+                    url_topic=active_topic.replace(" ", "_")
                     res=requests.get(url=f"{API_URL}/courses/{active_topic}/day/{current_day}", headers=headers)
 
                     if res.status_code==200: 
@@ -280,6 +284,13 @@ else:  # Token is valid
         with st.form(key="generate_new_form"):
             course_topic=st.text_input(label="What would you want to learn", placeholder="e.g. GCP Vertex AI")
 
+            # canary feature field
+            custom_project=st.text_input(
+                label="Custom Capstone Use-Case (Optional)",
+                placeholder="e.g. Building an Automated Enterprise AI Agent Platform",
+                help="Leave empty to let the AI deduce an industry-standard capstone project autonomously"
+            )
+
             col_a, col_b=st.columns(spec=2)
             with col_a:
                 duration_months=st.slider(label="Duration (Months)", max_value=6, min_value=1, value=1)
@@ -301,7 +312,8 @@ else:  # Token is valid
                 payloads={
                     "topic":course_topic,
                     "duration_months":duration_months,
-                    "off_days": off_days
+                    "off_days": off_days,
+                    "running_use_case_project": custom_project if custom_project.strip() else None
                 }
             
                 with st.spinner(text=f"Generating course for {course_topic} through AI"):

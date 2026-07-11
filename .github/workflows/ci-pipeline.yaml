@@ -99,6 +99,9 @@ jobs:
 
             # 2. Add the :latest tag ONLY if pushing to the main branch
             type=raw,value=latest,enable={{is_default_branch}}
+            
+            # 3. Add the canary tracking tag 
+            type=raw,value=v2-canary,enable={{is_default_branch}}
 
       # Build and Push the FastAPI backend
       - name: Build and push FastAPI Docker Image
@@ -133,7 +136,7 @@ jobs:
           tags: ${{ steps.meta-mcp.outputs.tags }}
           labels: ${{ steps.meta-mcp.outputs.labels }}
 
-      - name: Extract metadata (tags, labels) for MCP
+      - name: Extract metadata (tags, labels) for UI
         id: meta-ui
         uses: docker/metadata-action@v5
         with:
@@ -145,7 +148,10 @@ jobs:
 
             # 2. Add the :latest tag ONLY if pushing to the main branch
             type=raw,value=latest,enable={{is_default_branch}}
-      
+
+            # 3. Add the canary tracking tag for the frontend update
+            type=raw,value=v2-canary,enable={{is_default_branch}}
+            
       # Build and Push the Streamlit Server
       - name: Build and Push Streamlit UI Image
         uses: docker/build-push-action@v5
