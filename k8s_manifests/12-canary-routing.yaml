@@ -1,0 +1,51 @@
+# decoupling SSL generation from the standard Ingress
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: khudse-frontend-cert
+  namespace: default
+spec:
+  secretName: khudse-frontend-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+    - khudse.duckdns.org
+  
+---
+
+# The Traffic Splitter
+apiVersion: traefik.containo.us/v1alpha1
+kind: TraeficService
+metadata:
+  name: frontend-canary-Split
+  namespace: default
+spec:
+  weighted:
+    services:
+      - name: frontend
+        port: 8501
+        weight: 90
+      - name: frontend-canary
+        port: 8501
+        weight: 10
+
+---
+
+# The router (IngressRoute CRD)
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: khudse-canary-route
+  namespace: default
+spec:
+  entryPoints:
+    - websecure  # https
+  routes:
+    - match Host(`khudse.duckdns.org`)
+      kind: Rule
+      services:
+        - name: frontend-canary-Split
+          kind: TraeficService
+  tls:
+    secretName: khudse-frontend-tls

@@ -11,8 +11,9 @@ spec:
     matchNames:
       - default
   selector:
-    matchLabels:
-      app: api
+    matchExpressions:
+      # app: api
+      - {key: app, operator: In, values: [api, api-canary]}
   endpoints:
     - port: http-metrics
       path: /metrics
