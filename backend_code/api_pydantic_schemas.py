@@ -14,6 +14,7 @@ class CourseRequest(BaseModel):
     topic: str
     duration_months: float
     off_days: list[str]
+    running_use_case_project: str|None=None  # keeping it optional for various deployment techniques
 
     @field_validator('off_days')
     @classmethod

@@ -34,7 +34,8 @@ async def generate_course(
         username=current_user.username,
         duration_months=request.duration_months,
         off_days=request.off_days,
-        start_date=date.today()
+        start_date=date.today(),
+        running_use_case_project=request.running_use_case_project
         )
     return {
         "msg":f"Pipeline started for {request.topic}. Check MongoDB for updates",

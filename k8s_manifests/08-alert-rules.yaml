@@ -26,7 +26,7 @@ spec:
           severity: warning
         annotations:
           summary: "EC2 Instance disk space is critically low"
-          description: "Less than 15% disk space remains on the Node. Free up space of upgrade volume immediately"
+          description: "Less than 15% disk space remains on the Node. Free up space or upgrade volume immediately"
       # Tripwire 3: Backend Crash Loop
       - alert: BackendRestartLoop
         expr: sum(changes(kube_pod_container_status_restarts_total{namespace="default", container=~".*api.*"}[3m])) by (pod) >0
@@ -37,7 +37,17 @@ spec:
           summary: "Backend API Pod is crash Looping"
           description: "The backend pod {{ $labels.pod }} has continously restarted over the last 3 minutes. The UI will fail to generate courses."
       # Tripwire 4: High 5xx Error Rate (Code/Database Crashes)
-      - alert:  HighAPIErrorRate
+      - alert:  StableHighAPIErrorRate
+        # Triggers if any endpoint throws continuous 5xx errors for 2 minutes
+        expr: sum(rate(http_requests_total{namespace="default",service="api", status=~"5.."}[2m])) by (handler) >0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx Error Rate on API Endpoint"
+          description: "The backend API is throwing 5xx server errors on the {{ $labels.handler }} route. Check the FastAPI logs immediately"
+      # Tripwire 5: High 5xx Error Rate for Canary (Code/Database Crashes)
+      - alert:  CanaryHighAPIErrorRate
         # Triggers if any endpoint throws continuous 5xx errors for 2 minutes
         expr: sum(rate(http_requests_total{namespace="default",service="api", status=~"5.."}[2m])) by (handler) >0
         for: 2m

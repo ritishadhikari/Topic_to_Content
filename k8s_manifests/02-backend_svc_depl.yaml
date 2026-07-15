@@ -31,7 +31,8 @@ spec:
     spec:
       containers:
       - name: backend-api
-        image: ghcr.io/ritishadhikari/topic_to_content-api:latest
+        # pinning the last stable commit
+        image: ghcr.io/ritishadhikari/topic_to_content-api:sha-dcd084b
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

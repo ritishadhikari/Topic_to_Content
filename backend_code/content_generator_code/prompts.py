@@ -1,4 +1,16 @@
-def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: str):
+def expert_curriculam_prompt(
+        topic:str, 
+        total_study_days: int, 
+        research_notes: str,
+        user_project: str|None=None):
+    
+    # dynamically change the llm's instruction based on the Canary feature 
+
+    if user_project is not None:
+        project_instruction=f"1. CRITICAL: You MUST center the entire curriculum around this specific project provided by the user: `{user_project}`. Do not invent a different use-case "
+    else:
+        project_instruction=f"1. First, invent a highly engaging, realistic, industry-standartrunning user-case that the learner will build or apply concepts to over the duration of the course."
+
     return f"""
     You are an expert curriculum designer. The user wants to learn about '{topic}'
     
@@ -11,7 +23,8 @@ def expert_curriculam_prompt(topic:str, total_study_days: int, research_notes: s
     I need a progressive daily syllabus based on the research provided above.
 
     CRITICAL INSTRUCTION: 
-    1. First, invent a highly engaging, realistic, industry-standard running user-case that the learner will build or apply concepts to over the duration of the course.
+    {project_instruction}
+    
     2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
     
     Move from beginner concepts to advanced concepts, keeping the core project context in mind.

@@ -13,7 +13,7 @@ metadata:
 spec:
   repo: https://prometheus-community.github.io/helm-charts
   chart: kube-prometheus-stack
-  targetNamespace: monitoring
+  targetNamespace: monitoring  # install the promethues in the monitoring namespace and look for service monitor files that shares its release name - khudse-backend-monitor. Once it finds it, it shall start scraping the labels for the services in the namespace (default in this case) instructed to be scanned
   valuesContent: |-
 
     alertmanager:

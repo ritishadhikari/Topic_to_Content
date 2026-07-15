@@ -77,7 +77,7 @@ data:
                           },
                           "spec": {
                             "editorMode": "code",
-                            "expr": "sum(rate(http_requests_total{namespace=\"default\", service=\"api\"}[5m])) by (method, handler)",
+                            "expr": "sum(rate(http_requests_total{namespace=\"default\", service=\"api\"}[5m])) by (service, method, handler)",
                             "legendFormat": "__auto",
                             "range": true
                           }
@@ -195,7 +195,7 @@ data:
                           },
                           "spec": {
                             "editorMode": "code",
-                            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"default\", service=\"api\"}[5m])) by (le, handler))",
+                            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{namespace=\"default\", service=\"api\"}[5m])) by (le,service, handler))",
                             "legendFormat": "__auto",
                             "range": true
                           }
