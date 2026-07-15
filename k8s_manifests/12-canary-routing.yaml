@@ -18,7 +18,7 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: TraefikService
 metadata:
-  name: frontend-canary-Split
+  name: frontend-canary-split
   namespace: default
 spec:
   weighted:
@@ -45,7 +45,7 @@ spec:
     - match: Host(`khudse.duckdns.org`)
       kind: Rule
       services:
-        - name: frontend-canary-Split
+        - name: frontend-canary-split
           kind: TraefikService
   tls:
     secretName: khudse-frontend-tls
