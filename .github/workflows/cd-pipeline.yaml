@@ -84,6 +84,20 @@ jobs:
                 # Apply the new Canary components
                 kubectl apply -f ./k8s_manifests/10-canary-backend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/11-canary-frontend_svc_depl.yaml
+
+            - name: Wait for Traefik CRDs
+              run: |
+                echo "Waiting for Traefik CRDs to be registered..."
+                # Polls until the API knows about TraefikService
+                while ! kubectl get crd traefikservices.traefik.containo.us > /dev/null 2>&1; do
+                  echo "CRDs not ready, sleeping 5s..."
+                  sleep 5
+                done
+                # Give the controller an extra moment to stabilize
+                sleep 10
+            
+            - name: Apply Canary Routing
+              run: |
                 kubectl apply -f ./k8s_manifests/12-canary-routing.yaml
                 
             - name: Await Prometheus CRD Initialization
