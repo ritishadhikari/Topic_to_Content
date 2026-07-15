@@ -67,7 +67,8 @@ async def test_authorized_course_generation(mock_run_pipeline, async_client):
         username=username,
         duration_months=1.0,
         off_days=["Sunday"],
-        start_date=ANY
+        start_date=ANY,
+        running_use_case_project=None
     )
     # assert "Pipeline started for" in response.json()['msg']
     # assert response.json()['requested_by']==username
