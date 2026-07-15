@@ -16,7 +16,7 @@ spec:
 
 # The Traffic Splitter
 apiVersion: traefik.containo.us/v1alpha1
-kind: TraeficService
+kind: TraefikService
 metadata:
   name: frontend-canary-Split
   namespace: default
@@ -42,10 +42,10 @@ spec:
   entryPoints:
     - websecure  # https
   routes:
-    - match Host(`khudse.duckdns.org`)
+    - match: Host(`khudse.duckdns.org`)
       kind: Rule
       services:
         - name: frontend-canary-Split
-          kind: TraeficService
+          kind: TraefikService
   tls:
     secretName: khudse-frontend-tls
