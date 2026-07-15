@@ -22,6 +22,11 @@ spec:
   selector:
     matchLabels:
       app: frontend-canary
+  
+  template:
+    metadata:
+      labels:
+        app: frontend-canary
     spec:
       containers:
         - name: frontend
