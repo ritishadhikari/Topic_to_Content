@@ -89,7 +89,7 @@ jobs:
               run: |
                 echo "Waiting for Traefik CRDs to be registered..."
                 # Polls until the API knows about TraefikService
-                while ! kubectl get crd traefikservices.traefik.containo.us > /dev/null 2>&1; do
+                until kubectl get crd traefikservices.traefik.io > /dev/null 2>&1; do
                   echo "CRDs not ready, sleeping 5s..."
                   sleep 5
                 done
