@@ -71,12 +71,20 @@ jobs:
 
             - name: Deploy Core Infrastructure & Helm Engine
               run: |
+
+                # If an old pre canary conflicting frontend ingress is found, then remove them safely
+
                 # Apply everything EXCEPT the ServiceMonitor first
                 kubectl apply -f ./k8s_manifests/05-monitoring.yaml
                 kubectl apply -f ./k8s_manifests/01-backend_sealed_secrets.yaml
                 kubectl apply -f ./k8s_manifests/02-backend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/03-frontend_svc_depl.yaml
                 kubectl apply -f ./k8s_manifests/04-ingress.yaml
+
+                # Apply the new Canary components
+                kubectl apply -f ./k8s_manifests/10-canary-backend_svc_depl.yaml
+                kubectl apply -f ./k8s_manifests/11-canary-frontend_svc_depl.yaml
+                kubectl apply -f ./k8s_manifests/12-canary-routing.yaml
                 
             - name: Await Prometheus CRD Initialization
               run: |
@@ -98,11 +106,15 @@ jobs:
 
             - name: Trigger Rolling Updates
               run: |
-                # Force the API and Frontend supervisors to pull the new :latest images
+                # Force the API and Frontend supervisors to pull respective new images
                 kubectl rollout restart deployment api
                 kubectl rollout restart deployment frontend
+                kubectl rollout restart deployment api-canary
+                kubectl rollout restart deployment frontend-canary
             
             - name: Verify Deployment Status
               run: |
                 kubectl rollout status deployment api
                 kubectl rollout status deployment frontend
+                kubectl rollout status deployment api-canary
+                kubectl rollout status deployment frontend-canary

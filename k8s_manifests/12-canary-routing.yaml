@@ -25,10 +25,10 @@ spec:
     services:
       - name: frontend
         port: 8501
-        weight: 90
+        weight: 70
       - name: frontend-canary
         port: 8501
-        weight: 10
+        weight: 30
 
 ---
 

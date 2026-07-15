@@ -28,7 +28,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/ritishadhikari/topic_to_content-ui:latest
+          # pinning the last stable commit
+          image: ghcr.io/ritishadhikari/topic_to_content-ui:sha-dcd084b
           imagePullPolicy: Always
           ports:
             - containerPort: 8501
