@@ -4,6 +4,16 @@ name: Continuous Deployment Pipeline
 # can survive a terraform destroy and terraform apply. Only config has to be updated in the secret
 
 on:
+    workflow_dispatch:
+      inputs:
+        active_environment:
+            description: 'Select the Active Environment (100% Traffic)'
+            required: true
+            default: 'canary'
+            type: choice
+            options:
+              - canary
+              - stable
     workflow_run:
         workflows: ['Continuous Integration Pipeline']
         types:
@@ -96,8 +106,22 @@ jobs:
                 # Give the controller an extra moment to stabilize
                 sleep 10
             
-            - name: Apply Canary Routing
+            - name: Apply Blue/Green Routing
+              env:
+                # Defaults to 'canary' for automated CI/CD runs if no manual input is provided
+                ACTIVE_ENV: ${{ github.event.inputs.active_environment || 'canary' }}
               run: |
+                if [ "$ACTIVE_ENV" == "canary" ]; then 
+                  echo "Activating Canary (Blue). Dormanting Stable (Green) ..."
+                  sed -i -e '/name: frontend$/,/weight:/ s/weight: .*/weight: 0/' ./k8s_manifests/12-canary-routing.yaml
+                  sed -i -e '/name: frontend-canary$/,/weight:/ s/weight: .*/weight: 100/' ./k8s_manifests/12-canary-routing.yaml
+                else
+                  echo "Activating Stable (Green). Dormanting Canary (Blue) ..."
+                  sed -i -e '/name: frontend-canary$/,/weight:/ s/weight: .*/weight: 0/' ./k8s_manifests/12-canary-routing.yaml
+                  sed -i -e '/name: frontend$/,/weight:/ s/weight: .*/weight: 100/' ./k8s_manifests/12-canary-routing.yaml
+                fi
+                
+                # Applying the dynamically updated file
                 kubectl apply -f ./k8s_manifests/12-canary-routing.yaml
                 
             - name: Await Prometheus CRD Initialization
