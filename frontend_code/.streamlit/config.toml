@@ -1,11 +1,11 @@
 [theme]
 # The primary accent color for interactive elements (buttons, sliders, links)
 # Using a sleek, modern Indigo
-primaryColor="#6366f1"
+primaryColor="#667080"
 
 # The main background color for the application
 # Using a deep, premium slate/navy
-backgroundColor="#0f172a"
+backgroundColor="#919293"
 
 # The background color for the application
 # Using a deep, premium slate/navy

@@ -1,5 +1,3 @@
-from threading import activeCount
-
 import streamlit as st
 import requests
 import os
@@ -124,7 +122,11 @@ if st.session_state.auth_token is None:
                         try:
                             response=requests.post(
                                 url=f"{API_URL}/register",
-                                json={"username":reg_user,"email":reg_email,"password":reg_password}
+                                json={
+                                        "username":reg_user,
+                                        "email":reg_email,
+                                        "password":reg_password
+                                        }
                             )
                             
                             if response.status_code in (200,201):
