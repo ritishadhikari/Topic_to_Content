@@ -177,8 +177,9 @@ else:  # Token is valid
             for ct in completed_tasks:
                 st.session_state.active_generations.remove(ct)
 
+        
         if st.session_state.active_generations:
-            st.button(label="🔄 Refresh Progress", width="stretch")
+            st.button(label="🔄 Refresh Progress", width="stretch")  # reruns from the top to the bottom
 
     # In the main window
     st.title(body="Khudse")
@@ -284,7 +285,7 @@ else:  # Token is valid
     with tab_generate:
         st.subheader(body="Create a Custom Curriculum")
         with st.form(key="generate_new_form"):
-            course_topic=st.text_input(label="What would you want to learn", placeholder="e.g. GCP Vertex AI")
+            course_topic=st.text_input(label="What would you want to learn", placeholder="e.g. Computer Networks with Python")
 
             # canary feature field
             custom_project=st.text_input(

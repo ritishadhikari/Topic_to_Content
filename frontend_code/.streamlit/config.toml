@@ -1,11 +1,11 @@
 [theme]
 # The primary accent color for interactive elements (buttons, sliders, links)
 # Using a sleek, modern Indigo
-primaryColor="#667080"
+primaryColor="#6366f1"
 
 # The main background color for the application
 # Using a deep, premium slate/navy
-backgroundColor="#919293"
+backgroundColor="#0f172a"
 
 # The background color for the application
 # Using a deep, premium slate/navy
@@ -22,4 +22,3 @@ font="sans serif"
 # This prevents Streamlit from showing the "Deploy" button in the top right corner
 # which makes the app feel more like a custom platform rather than a script
 toolbarMode="viewer"
-
