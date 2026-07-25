@@ -5,7 +5,7 @@ resource "random_password" "k3s_token" {
 }
 
 # virtual private cloud
-resource "aws_vpc" "k3s_vpc" {
+resource "aws_vpc" "khudse_vpc" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -14,13 +14,13 @@ resource "aws_vpc" "k3s_vpc" {
 
 # internet gateway
 resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.k3s_vpc.id
+  vpc_id = aws_vpc.khudse_vpc.id
   tags   = { Name = "${var.project_name}-igw" }
 }
 
 # public subnet with in the vpc
 resource "aws_subnet" "public_subnet" {
-  vpc_id                  = aws_vpc.k3s_vpc.id
+  vpc_id                  = aws_vpc.khudse_vpc.id
   cidr_block              = "10.0.1.0/24"
   map_public_ip_on_launch = true
   tags                    = { Name = "${var.project_name}-subnet" }
@@ -28,7 +28,7 @@ resource "aws_subnet" "public_subnet" {
 
 # create the route table
 resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.k3s_vpc.id
+  vpc_id = aws_vpc.khudse_vpc.id
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gw.id
@@ -37,30 +37,31 @@ resource "aws_route_table" "public_rt" {
 
 # associate the route table
 resource "aws_route_table_association" "public_assoc" {
-  subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.public_rt.id
+  subnet_id      = aws_subnet.public_subnet.id  # who gets the rules
+  route_table_id = aws_route_table.public_rt.id  # what rules apply
 }
 
 # the security group
-resource "aws_security_group" "k3s_sg" {
+resource "aws_security_group" "khudse_sg" {
   name        = "${var.project_name}-sg"
   description = "Allow inbound traffic for K3s, SSH, HTTP/HTTPS and Internal VPC"
-  vpc_id      = aws_vpc.k3s_vpc.id
+  vpc_id      = aws_vpc.khudse_vpc.id
 
   # Allow all internal commununications between Master and Worker (Flannel, Kubelet etc.)
+  # specially for the internal servers living inside the private AWS network, allowing constantly talk among them each other
   ingress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [aws_vpc.k3s_vpc.cidr_block]
+    protocol    = "-1"  # allows all protocols - TCP, UDP, ICMP, etc
+    cidr_blocks = [aws_vpc.khudse_vpc.cidr_block]  # all the ip address can access within the VPC
   }
 
   # SSH access
   ingress {
-    from_port   = 22
+    from_port   = 22  # all ports has the connectivity to and from
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]  # allows traffic from anywhere on the internet
   }
 
   # HTTP web traffic access
@@ -84,10 +85,16 @@ resource "aws_security_group" "k3s_sg" {
     from_port   = 6443
     to_port     = 6443
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]  # allows to manage clusters remotely from local laptop using kubectl
   }
 
-  # outboud traffic
+  # If a hacker on the public internet (0.0.0.0/0) tries to access a sensitive internal Kubernetes port on your server (like port 2379), AWS checks the rules:
+  # Does the hacker match aws_vpc.khudse_vpc.cidr_block? No.
+  # Does the hacker match 0.0.0.0/0 on port 80? No.
+  # Does the hacker match 0.0.0.0/0 on port 22? No.
+  # Because no rule matches, the traffic is dropped. The hacker is kept out, but your worker nodes can still communicate on port 2379 because they match the first internal rule.
+
+  # outbound traffic
   egress {
     from_port   = 0
     to_port     = 0
@@ -111,13 +118,14 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "k3s_master" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = "k3s-cluster-key"
+  key_name               = "k3s-cluster-key"  # required for ssh and scp purpose to the nodes
   subnet_id              = aws_subnet.public_subnet.id
-  vpc_security_group_ids = [aws_security_group.k3s_sg.id]
+  vpc_security_group_ids = [aws_security_group.khudse_sg.id]
 
   user_data = <<-EOF
               #!/bin/bash
               #  Install K3s as a Master Node with the generated token
+              # Requires for locking the master node with the worker node
               curl -sfL https://get.k3s.io | K3S_TOKEN=${random_password.k3s_token.result} sh -
 
               sleep 15
@@ -128,14 +136,13 @@ resource "aws_instance" "k3s_master" {
 }
 
 
-
 # Data Plane (worker node)
 resource "aws_instance" "k3s_worker" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
   key_name               = "k3s-cluster-key"
   subnet_id              = aws_subnet.public_subnet.id
-  vpc_security_group_ids = [aws_security_group.k3s_sg.id]
+  vpc_security_group_ids = [aws_security_group.khudse_sg.id]
 
   depends_on = [aws_instance.k3s_master]
 
