@@ -103,14 +103,22 @@ class KhudseLoadTestUser(HttpUser):
             "Docker Networking",
             "Prometheus Monitoring"
         ]
-        chosen_topic=random.choice(topics_list)
+        chosen_topic=random.choice(seq=topics_list)
+
+        project_list=[
+            "Building a multi-region highly available cluster",
+            "Designing a real-time streaming dashboard",
+            "Automating enterprise CI/CD pipelines"
+        ]
+        chosen_project=random.choice(seq=project_list)
 
         response=self.client.post(
             url="/generate-course",
             json={
                 "topic": chosen_topic,
                 "duration_months": 1.0,
-                "off_days": ['Monday']
+                "off_days": ['Monday'],
+                "running_use_case_project": chosen_project
             },
             name="7. Generate Course (PAID API)"
         )
