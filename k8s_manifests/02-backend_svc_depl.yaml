@@ -11,7 +11,7 @@ spec:
     - protocol: TCP
       name: http-metrics  # naming the port so that prometheus knows which pod to scrape
       port: 8000
-      targetPort: 8000
+      targetPort: 8000  # must match the container port in the deployment section since this is the port inside the container where the fast api is listening
 
 ---
 

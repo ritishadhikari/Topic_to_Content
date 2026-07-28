@@ -49,7 +49,7 @@ spec:
       # Tripwire 5: High 5xx Error Rate for Canary (Code/Database Crashes)
       - alert:  CanaryHighAPIErrorRate
         # Triggers if any endpoint throws continuous 5xx errors for 2 minutes
-        expr: sum(rate(http_requests_total{namespace="default",service="api", status=~"5.."}[2m])) by (handler) >0
+        expr: sum(rate(http_requests_total{namespace="default",service="api-canary", status=~"5.."}[2m])) by (handler) >0
         for: 2m
         labels:
           severity: critical
