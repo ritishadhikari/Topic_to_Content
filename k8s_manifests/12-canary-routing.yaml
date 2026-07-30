@@ -5,7 +5,7 @@ metadata:
   name: khudse-frontend-cert
   namespace: default
 spec:
-  secretName: khudse-frontend-tls
+  secretName: khudse-frontend-tls  # the https ssl certificate is saved here
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer

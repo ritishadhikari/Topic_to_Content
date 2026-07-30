@@ -4,14 +4,25 @@ metadata:
   name: letsencrypt-prod
 spec:
   acme:
+    # create an account in this website with the email address
     server: https://acme-v02.api.letsencrypt.org/directory
     email: ritishadhikari@gmail.com
     privateKeySecretRef:
-      # in the first attempt, cert-manager will send the public key to letsencrypt
-      # while sending the hostname, it will also send the private key which matches the public key
+      # in the first attempt during the registration process above, cert-manager will send the public key to letsencrypt while it keeps the private keys internally to itself in the secret letsencrypt-prod-private-key
+      # while sending the hostname and requesting for the certificate from lets encrypt, it mathematically "signs" the request using that hidden private key
+      # Let's Encrypt uses the public key they have on file to verify the signature, proving the request came from you without ever seeing the private key!
       name: letsencrypt-prod-private-key
+    # When you deploy your IngressRoute and ask for a certificate for khudse.duckdns.org, cert-manager uses its account to ask Let's Encrypt for the certificate.
+
+    # Let's Encrypt responds: "I will issue the certificate, but first, you have to prove you actually control the domain khudse.duckdns.org." Let's Encrypt then provides cert-manager with a unique, random token (this is the "shared puzzle")
     # when lets encrypt will want to locate the shared puzzle in the webserver spun by the kubernetes server, it will access through traefik
     solvers:
+    # cert-manager automatically spins up a tiny, temporary web server pod inside your Kubernetes cluster. It places the unique "shared puzzle" token on this server.
     - http01:
         ingress: 
+          # cert-manager dynamically reconfigures your Traefik proxy. It tells Traefik: "If any traffic comes in looking for the exact path /.well-known/acme-challenge/<token>, route it directly to my temporary puzzle server."
           class: traefik
+          # Traefik catches Let's Encrypt's request and routes it to the temporary cert-manager server. Let's Encrypt downloads the token, and checks if it matches the one it originally provided.
+          # Because the tokens match, Let's Encrypt knows for a fact that whoever controls the Kubernetes cluster also controls the DNS for khudse.duckdns.org. Trust is officially established!
+          # cert-manager deletes the temporary puzzle web server and the temporary Traefik routing rules
+          # Let's Encrypt generates your brand new, cryptographically secure HTTPS certificate and sends it back to cert-manager, which neatly tucks it away into the khudse-frontend-tls secret for your application to use (present inside 12-canary-routing.yaml)
