@@ -39,3 +39,16 @@ spec:
         envFrom:
         - secretRef:
             name: backend-credentials
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 30

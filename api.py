@@ -16,7 +16,10 @@ app=FastAPI(title="Khudse API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://khudse.duckdns.org",
+        "https://grafana.khudse.duckdns.org"
+        ],
     allow_credentials=False,
     allow_methods=['*'],
     allow_headers=["*"]

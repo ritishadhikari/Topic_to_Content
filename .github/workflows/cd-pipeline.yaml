@@ -1,7 +1,7 @@
 name: Continuous Deployment Pipeline
 
 # triggers the CD pipeline only after the CI pipeline finishes successfully on the main branch
-# can survive a terraform destroy and terraform apply. Only config has to be updated in the secret
+# can survive a terraform destroy and terraform apply.
 
 on:
     workflow_dispatch:
@@ -42,6 +42,7 @@ jobs:
               run: |
                 mkdir -p ~/.kube
                 echo "$KUBE_CONFIG_DATA" > ~/.kube/config
+                # only the owner has read(4) and write(2) access. Groups and Public cannot do anything, hence 0 and 0
                 chmod 600 ~/.kube/config
             
             - name: Install Bitnami and Inject Master Key
@@ -70,10 +71,12 @@ jobs:
             - name: Install Cert-Manager
               run: |
                 # Add the official Cert-Manager Helm repository
+                # Update is for the runner (downloaded in temporary hard drives)
                 helm repo add jetstack https://charts.jetstack.io
                 helm repo update
 
                 # Install Cert-Manager into the cluster
+                # upgrade is for the cluster
                 helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --create-namespace --set installCRDs=true --wait
                 
                 # applying the certificate issuer first so that it can watch for the ingress sharing the same metadata name as this cert-issuer.yaml
@@ -96,6 +99,7 @@ jobs:
                 kubectl apply -f ./k8s_manifests/11-canary-frontend_svc_depl.yaml
 
             - name: Wait for Traefik CRDs
+              # Traefik and its CRDs (such as TraefikService and IngressRoute) are bundled and pre-installed out-of-the-box when the master node boots up. File 04-ingress.yaml simply leverages the traefik ingress class that K3s already established.
               run: |
                 echo "Waiting for Traefik CRDs to be registered..."
                 # Polls until the API knows about TraefikService
@@ -125,6 +129,7 @@ jobs:
                 kubectl apply -f ./k8s_manifests/12-canary-routing.yaml
                 
             - name: Await Prometheus CRD Initialization
+              # Prometheus is installed as part of 05-monitoring.yaml and hence it is required to be installed first since 06-service-monitor.yaml has khudse-backend-monitor tagged which has its origin from 05-monitoring.yaml
               run: |
                 echo "Waiting for K3s Helm Controller to download and install Prometheus CRDs"
                 # This loop pings the Kubernetes API every 5 seconds
@@ -141,6 +146,7 @@ jobs:
               run: |
                 kubectl apply -f ./k8s_manifests/06-servicemonitor.yaml
                 kubectl apply -f ./k8s_manifests/07-grafana-dashboard.yaml
+                kubectl apply -f ./k8s_manifests/08-alert-rules.yaml
 
             - name: Trigger Rolling Updates
               run: |
