@@ -9,7 +9,7 @@ apiVersion: helm.cattle.io/v1
 kind: HelmChart
 metadata:
   name: khudse-backend-monitor
-  namespace: kube-system
+  namespace: kube-system  # the helmchart gets installed in the kubesystem namespace
 spec:
   repo: https://prometheus-community.github.io/helm-charts
   chart: kube-prometheus-stack

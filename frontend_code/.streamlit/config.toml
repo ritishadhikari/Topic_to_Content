@@ -22,4 +22,3 @@ font="sans serif"
 # This prevents Streamlit from showing the "Deploy" button in the top right corner
 # which makes the app feel more like a custom platform rather than a script
 toolbarMode="viewer"
-

@@ -11,7 +11,7 @@ spec:
     - protocol: TCP
       name: http-metrics  # naming the port so that prometheus knows which pod to scrape
       port: 8000
-      targetPort: 8000
+      targetPort: 8000  # must match the container port in the deployment section since this is the port inside the container where the fast api is listening
 
 ---
 
@@ -39,3 +39,16 @@ spec:
         envFrom:
         - secretRef:
             name: backend-credentials
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 20
+          periodSeconds: 30
