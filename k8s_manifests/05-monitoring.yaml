@@ -41,7 +41,8 @@ spec:
           - to: 'adhikari_ritish@rediffmail.com'
             send_resolved: true
           - to: 'radhik0607@gmail.com'
-            send_resolved: true   
+            send_resolved: true
+               
     grafana:
       enabled: true
       admin:
