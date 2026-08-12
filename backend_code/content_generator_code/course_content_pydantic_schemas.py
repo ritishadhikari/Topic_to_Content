@@ -10,8 +10,7 @@ class DailyTopic(BaseModel):
 
 def get_curriculum_plan_schema(total_study_days: int, has_user_project:bool=False):
     """
-    Dynamically generates the CurriculumPlan Pydantic schema enforcing
-    strict length requirements based on the calculated study days.
+    Dynamically generates the CurriculumPlan Pydantic schema enforcing strict length requirements based on the calculated study days.
     """
     if has_user_project:
         class CurriculumPlan(BaseModel):

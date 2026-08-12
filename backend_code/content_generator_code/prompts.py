@@ -1,34 +1,3 @@
-def expert_curriculam_prompt(
-        topic:str, 
-        total_study_days: int, 
-        research_notes: str,
-        user_project: str|None=None):
-    
-    # dynamically change the llm's instruction based on the Canary feature 
-
-    if user_project is not None:
-        project_instruction=f"1. CRITICAL: You MUST center the entire curriculum around this specific project provided by the user: `{user_project}`. Do not invent a different use-case "
-    else:
-        project_instruction=f"1. First, invent a highly engaging, realistic, industry-standartrunning user-case that the learner will build or apply concepts to over the duration of the course."
-
-    return f"""
-    You are an expert curriculum designer. The user wants to learn about '{topic}'
-    
-    
-    Here is the researched syllabus outline and structural guidance:
-    <research>
-    {research_notes}
-    </research>
-
-    I need a progressive daily syllabus based on the research provided above.
-
-    CRITICAL INSTRUCTION: 
-    {project_instruction}
-    
-    2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
-    
-    Move from beginner concepts to advanced concepts, keeping the core project context in mind.
-    """
 
 def researcher_prompt(topic: str, duration_months: float, web_context: str):
     return f"""
@@ -49,6 +18,38 @@ def researcher_prompt(topic: str, duration_months: float, web_context: str):
     This outline will be used by a schedule architect to build a daily study plan. 
     Output a detailed, structured text outline. 
 """
+
+def expert_curriculam_prompt(
+        topic:str, 
+        total_study_days: int, 
+        research_notes: str,
+        user_project: str|None=None):
+    
+    # dynamically change the llm's instruction based on the Canary feature 
+
+    if user_project is not None:
+        project_instruction=f"1. CRITICAL: You MUST center the entire curriculum around this specific project provided by the user: `{user_project}`. Do not invent a different use-case "
+    else:
+        project_instruction=f"1. First, invent a highly engaging, realistic, industry-standard running use-case that the learner will build or apply concepts to over the duration of the course."
+
+    return f"""
+    You are an expert curriculum designer. The user wants to learn about '{topic}'
+    
+    
+    Here is the researched syllabus outline and structural guidance:
+    <research>
+    {research_notes}
+    </research>
+
+    I need a progressive daily syllabus based on the research provided above.
+
+    CRITICAL INSTRUCTION: 
+    {project_instruction}
+    
+    2.Then generate EXACTLY {total_study_days} daily sub-topics. Not one more, not one less.
+    
+    Move from beginner concepts to advanced concepts, keeping the core project context in mind.
+    """
 
 def daily_content_prompt(course_topic: str, daily_topic: str, web_context: str, running_use_case_project):
     return f"""

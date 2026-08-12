@@ -9,9 +9,9 @@ from backend_code.content_generator_code.prompts import (expert_curriculam_promp
 # from langchain_openai import ChatOpenAI
 from dotenv import load_dotenv
 from backend_code.content_generator_code.course_content_pydantic_schemas import (get_curriculum_plan_schema, CodePresence, SyntaxReview, PedagogicalReview, RefresherQuiz)
-from langchain_community.tools.tavily_search import TavilySearchResults
+# from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.utilities import BraveSearchWrapper, GoogleSerperAPIWrapper
-from motor import motor_asyncio
+# from motor import motor_asyncio
 from backend_code.content_generator_code.variables import (CURRICULUM_RESEARCHER_MODEL,
                        SCHEDULE_ARCHITECT_MODEL,DAILY_CONTENT_GENERATOR_MODEL,
                        CODE_PRESENCE_CHECKER_MODEL, CODE_SYNTAX_CHECKER_MODEL, 
