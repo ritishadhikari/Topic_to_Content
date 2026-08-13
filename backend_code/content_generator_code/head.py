@@ -1,7 +1,7 @@
 from typing import List, Annotated, Dict
 from datetime import date, datetime, timedelta
 from pydantic import BaseModel, Field
-import logging, os
+import logging
 from backend_code.content_generator_code.helper_functions import (add_schedules, get_exact_end_date)
 from backend_code.content_generator_code.prompts import (expert_curriculam_prompt, researcher_prompt, daily_content_prompt, 
                      code_presence_checker_prompt, syntax_checker_prompt, pedagogical_validator_prompt,
@@ -29,7 +29,7 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 
-logger=logging.getLogger(name="TopicToContentGraph")
+logger=logging.getLogger(name="KhudseGraph")
 
 
 class GraphState(BaseModel):
@@ -77,7 +77,6 @@ async def curriculum_researcher(state: GraphState):
     """
     logger.info(msg="---[RESEARCHING] GATHERING LIVE SYLLABUS DATA")
 
-    # search_tool=TavilySearchResults(max_results=4, search_depth="advanced")
     current_year=state.system_date.year
     search_query=f"Latest Comprehensive syllabus course outline topics for {state.topic} as of {current_year}"
     logger.info(msg=f"Executing Web Search: {search_query}")
@@ -86,7 +85,6 @@ async def curriculum_researcher(state: GraphState):
         logger.info(msg="Attempting Search with Brave API")
         search_tool=BraveSearchWrapper()
         web_context=search_tool.run(search_query)
-        # web_context="\n\n".join([f"Source: {result.get('link','Unknown')}\nContent: {result.get('snippet','')}" for result in search_results[:4]])
         logger.info(msg="Brave Web Search Successful")
     except Exception as brave_err:
         logger.warning(msg=f"Brave search failed due to Quota limit error. Error: {brave_err} ")
@@ -110,7 +108,6 @@ async def curriculum_researcher(state: GraphState):
     if isinstance(raw_content, list):
         extracted_text=[p['text'] if isinstance(p,dict) and "text" in p else str(p) for p in raw_content]
         finalContent="\n".join(extracted_text)
-    
     else:
        finalContent=str(raw_content) 
 
@@ -216,8 +213,6 @@ async def daily_content_researcher(state:GraphState):
     
     logger.info(msg=f"--- [DAILY RESEARCH] FETCHING CONTEXT FOR DAY {state.day_number}: {todays_topic}")
 
-    search_query=f"{todays_topic} in {state.topic} tutorial examples latest"
-
     concept_query=f"{todays_topic} {state.topic} official documentation architecture explanation"
 
     practical_query=f"{todays_topic} {state.topic} implementation examples best practices"
@@ -283,7 +278,6 @@ async def daily_content_generator(state: GraphState):
         "latest_content":finalContent
 
     }
-
 
 async def code_presence_checker(state: GraphState):
     """
