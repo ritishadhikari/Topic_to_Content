@@ -380,7 +380,7 @@ async def refresher_generator(state: GraphState):
 
     formatted_quiz="\n\n### 📝 Refresher Quiz\n*Test your understanding of today's concepts:*\n\n"
     for i,q in enumerate(quiz.questions, 1):
-        formatted_quiz+=f"**Q{i}:** {q.question}\n**A:** {q.answer}\n\n"
+        formatted_quiz+=f"**Q{i}:** {q.question}\n**A:  ** {q.answer}\n\n"
     
     return {
         "refresher_questions": formatted_quiz
