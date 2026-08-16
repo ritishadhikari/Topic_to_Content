@@ -2,15 +2,24 @@ from pydantic import BaseModel, field_validator, EmailStr
 from typing import List,Literal
 
 class UserCreate(BaseModel):
+    '''
+    needed during user registration
+    '''
     username: str
     email: EmailStr
     password: str
 
 class Token(BaseModel):
+    '''
+    Retrieved as an output for /authorize
+    '''
     access_token: str
     token_type: str
 
 class CourseRequest(BaseModel):
+    '''
+    needed during course generation
+    '''
     topic: str
     duration_months: float
     off_days: list[str]
@@ -25,9 +34,13 @@ class CourseRequest(BaseModel):
             return v
     
 class DataBaseUser(BaseModel):
+    '''
+    needed during passing the user details to various usable apis during the get_current_user()
+    '''
     username: str
     hashed_password: str
 
+####################################
 class SyllabusItem(BaseModel):
     day_number: int
     daily_topic: str
@@ -38,16 +51,26 @@ class CourseSummaryItem(BaseModel):
     syllabus: list[SyllabusItem] | None= None
 
 class UserCoursesResponse(BaseModel):
+    '''
+    needed while fetching the  my_courses api
+    '''
     total_courses:int
     courses: list[CourseSummaryItem]
+#####################################
 
 class CourseStatusResponse(BaseModel):
+    '''
+    Retrieved as an output for /courses/{topic}/status api
+    '''
     status:Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "ERROR"]
     current_day: int
     total_study_days: int
     is_completed: bool
 
 class DailyLessonResponse(BaseModel):
+    '''
+    Retrieved as an output for /courses/{topic}/day/{day_number}
+    '''
     course_topic: str
     running_use_case_project: str| None=None
     day_number: int
