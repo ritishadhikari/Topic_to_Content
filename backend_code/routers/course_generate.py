@@ -205,7 +205,8 @@ async def get_generation_status(
     is_finished=False
     if checkpoint_doc:
         is_finished=(total_study_days>0 and completed_days_count>=total_study_days) or ( len(pending_tasks)==0 and completed_days_count>0)
-        status_str="COMPLETED" if is_finished else "IN_PROGRESS"
+        status_str="COMPLETED" if is_finished els
+        e "IN_PROGRESS"
     elif completed_days_count==0:
         status_str="NOT_STARTED"
     elif completed_days_count>0:
