@@ -41,7 +41,8 @@ async def background_pipeline_worker(
         topic: str,
         username: str,
         duration_months: float,
-        off_days: list[str]
+        off_days: list[str],
+        running_use_case_project:str|None=None
     ):
     """
     Runs the heavy Langgraph Pipeline in the background and manages its own isolated MongoDB connection
@@ -54,7 +55,8 @@ async def background_pipeline_worker(
             username=username,
             duration_months=duration_months,
             off_days=off_days,
-            start_date=date.today()
+            start_date=date.today(),
+            running_use_case_project=running_use_case_project
         )
     except Exception as e:
         logger.error(msg=f"Pipeline failed: {e}",exc_info=True)
@@ -63,7 +65,7 @@ async def background_pipeline_worker(
 active_tasks=set()
 # Generate new course
 @mcp.tool()
-async def generate_new_course(topic: str, duration_months: float, off_days: list[str]) ->str:
+async def generate_new_course(topic: str, duration_months: float, off_days: list[str], running_use_case_project: str|None=None) ->str:
     """
     Triggers the AI Agent pipeline to research and generate a comprehensive daily study course.
     Use this tool ONLY when the user explicitly asks to generate, create, or bild a NEW course syllabus.
@@ -79,7 +81,8 @@ async def generate_new_course(topic: str, duration_months: float, off_days: list
         topic=topic,
         username=MCP_IDENTITY,
         duration_months=duration_months,
-        off_days=off_days
+        off_days=off_days,
+        running_use_case_project=running_use_case_project
     ))
 
   
@@ -233,7 +236,7 @@ def tutor_me(course_topic: str)  -> str:
     """
 
     return f"""
-    I am currently stufying '{course_topic}' on the Khudse platform.
+    I am currently studying '{course_topic}' on the Khudse platform.
 
     Please act as a strict, pedagogical tutor.
     1. Use the `get_course_summary` and `get_lesson_deep_dive` tools to read my current curriculum.
