@@ -26,7 +26,6 @@ jobs:
       GOOGLE_API_KEY: sk-dummy-key
       BRAVE_SEARCH_API_KEY: dummmy-key
       GEMINI_API_KEY: sk-dummy-key
-      TAVILY_API_KEY: tvly-dummy-key
       SERPER_API_KEY: dummy-serper-key
 
     steps:
