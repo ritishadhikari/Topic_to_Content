@@ -16,7 +16,7 @@ spec:
       - {key: app, operator: In, values: [api, api-canary]}
   endpoints:
     - port: http-metrics
-      path: /metrics  # the endpoint which calculated and processes the information to be displayed in prometheus and the grafana dashboard
+      path: /metrics  # the endpoint which calculates and processes the information to be displayed in prometheus and the grafana dashboard
       interval: 15s  # scrape frequency
 
 # instrument(app=app)This hooks into FastAPI's middleware. It silently watches every single HTTP request that comes into your server (like /generate-course or /authorize) and records the data: what the route was, what the HTTP status code was (e.g., 200, 401, 500), and exactly how many milliseconds it took to process. 
