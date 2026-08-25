@@ -23,11 +23,11 @@ spec:
   replicas: 2
   selector:
     matchLabels:
-      app: api
+      app: api  # will look for 2 pods with the tag app:api, if not available, then will recreate it
   template:
     metadata:
       labels:
-        app: api
+        app: api  # actually tagging this container as app:api inside the pod where it will run
     spec:
       containers:
       - name: backend-api

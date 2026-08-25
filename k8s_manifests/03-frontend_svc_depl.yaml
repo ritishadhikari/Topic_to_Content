@@ -7,8 +7,8 @@ spec:
     app: frontend
   ports:
     - protocol: TCP
-      port: 8501
-      targetPort: 8501
+      port: 8501  # the port ouside (external)
+      targetPort: 8501  # the port inside the container
   
 ---
 
@@ -27,7 +27,7 @@ spec:
         app: frontend
     spec:
       containers:
-        - name: frontend
+        - name: frontend-ui
           # pinning the last stable commit
           image: ghcr.io/ritishadhikari/topic_to_content-ui:sha-dcd084b
           imagePullPolicy: Always
@@ -35,4 +35,4 @@ spec:
             - containerPort: 8501
           env:
           - name: API_URL
-            value: "http://api:8000"
+            value: "http://api:8000"  # refers to the service name api which internally contacts the pod named api through its selector

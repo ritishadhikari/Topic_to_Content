@@ -8,7 +8,7 @@ metadata:
     app: api-canary  # the service monitor looks for this label
 spec: 
   selector:
-    app: api-canary  # the pod with the name - api will be contacted
+    app: api-canary  # the pod with the name - api-canary will be contacted
   ports:
     - protocol: TCP
       name: http-metrics
