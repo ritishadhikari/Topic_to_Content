@@ -51,11 +51,11 @@ def test_successful_login_flow(mock_post, mock_get, base_app):
 
     at=base_app.run()
 
-    at.text_input[0].input("developer_test_user")
-    at.text_input[1].input("SecurePassword123!")
+    at.text_input[3].input("developer_test_user")
+    at.text_input[4].input("SecurePassword123!")
 
     # submit the form
-    at.button[0].click().run()
+    at.button[1].click().run()
     
     assert at.session_state['auth_token']=="mocked_jwt_secret_payload_string"
     assert at.session_state['username']=="developer_test_user"
