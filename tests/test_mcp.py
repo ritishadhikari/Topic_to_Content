@@ -26,7 +26,8 @@ async def test_mcp_generate_new_course(mock_pipeline_worker, async_client):
         topic="MCP Testing Protocol",
         username=MCP_IDENTITY,
         duration_months=1.0,
-        off_days=["Monday"]
+        off_days=["Monday"],
+        running_use_case_project=None
     )
 
     # Verify that the LLM gets the correct success string back
