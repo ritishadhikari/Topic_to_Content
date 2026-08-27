@@ -35,6 +35,7 @@ async def register_user(user: UserCreate):
         await db_state.db.users.insert_one(document=user_dict)
         logger.info(msg=f"User {user.username} registered successfully.")
         return {"msg": "User created Successfully"}
+
     
 @router.post(path="/authorize", response_model=Token, status_code=status.HTTP_200_OK)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm=Depends()):

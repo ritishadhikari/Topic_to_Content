@@ -37,6 +37,7 @@ def verify_password(plain_password:str, hashed_password:str):
 def create_access_token(data:dict, expires_delta: timedelta|None=None):
     """
     Needed during Authorization
+    This access token along with the bearer is returned once an user is authorized
     """
     to_encode=data.copy()
     expire=datetime.now(tz=timezone.utc)+(expires_delta if expires_delta is not None else timedelta(minutes=15))

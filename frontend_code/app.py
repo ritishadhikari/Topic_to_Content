@@ -73,38 +73,7 @@ if st.session_state.auth_token is None:
     
     st.write("----")
 
-    tab_login,tab_register=st.tabs(tabs=['Log In', "Create Account"])
-
-    # LOGIN TAB
-    with tab_login:
-        with st.form(key="login_form"):
-            st.subheader(body="Welcome Back")
-            login_user=st.text_input(label="Username")
-            login_pass=st.text_input(label="Password", type="password")
-            submitted=st.form_submit_button(label="Sign In",width="stretch")
-
-            if submitted:
-                if not login_user or not login_pass:
-                    st.warning(body="Please enter both username and password")
-                else:
-                    with st.spinner(text="Authenticating..."):
-                        try:
-                            response=requests.post(
-                                url=f"{API_URL}/authorize",
-                                data={'username':login_user, 'password': login_pass}
-                            )
-                            if response.status_code==200:
-                                data=response.json()
-                                st.session_state.auth_token=data.get('access_token')
-                                st.session_state.username=login_user
-                                logger.info(msg=f"User `{login_user}` authenticated successfully via UI form.")
-                                st.success(body="Login Successful!")
-                                st.rerun()
-                            else:
-                                st.error(body="Invalid Username or Password")
-                                logger.warning(msg=f"Failed authentication attempt for username: `{login_user} - Status Code: {response.status_code}`")
-                        except requests.exceptions.ConnectionError:
-                            st.error(body="Cannot connect to the backend server. Is it running?")
+    tab_register,tab_login=st.tabs(tabs=["Create Account",'Log In'])
     
     with tab_register:
         with st.form(key="register_form"):
@@ -140,7 +109,38 @@ if st.session_state.auth_token is None:
                                 logger.warning(msg=f"An error occurred during registration. - {response.status_code}")
                         except requests.exceptions.ConnectionError:
                             st.error("Cannot connect to the backend server. Is it running?")
+    # LOGIN TAB
+    with tab_login:
+        with st.form(key="login_form"):
+            st.subheader(body="Welcome Back")
+            login_user=st.text_input(label="Username")
+            login_pass=st.text_input(label="Password", type="password")
+            submitted=st.form_submit_button(label="Sign In",width="stretch")
+
+            if submitted:
+                if not login_user or not login_pass:
+                    st.warning(body="Please enter both username and password")
+                else:
+                    with st.spinner(text="Authenticating..."):
+                        try:
+                            response=requests.post(
+                                url=f"{API_URL}/authorize",
+                                data={'username':login_user, 'password': login_pass}
+                            )
+                            if response.status_code==200:
+                                data=response.json()
+                                st.session_state.auth_token=data.get('access_token')
+                                st.session_state.username=login_user
+                                logger.info(msg=f"User `{login_user}` authenticated successfully via UI form.")
+                                st.success(body="Login Successful!")
+                                st.rerun()
+                            else:
+                                st.error(body="Invalid Username or Password")
+                                logger.warning(msg=f"Failed authentication attempt for username: `{login_user} - Status Code: {response.status_code}`")
+                        except requests.exceptions.ConnectionError:
+                            st.error(body="Cannot connect to the backend server. Is it running?")
     st.stop()  # if token is not valid, then even after the rerun, should not redirect to the content generation 'else' page
+
 else:  # Token is valid
     with st.sidebar:
         st.write(f"Hi {st.session_state.username}")

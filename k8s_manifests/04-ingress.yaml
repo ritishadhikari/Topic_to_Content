@@ -28,15 +28,17 @@
 #               number: 8501
 
 ---
-
+# an ingress is a set of rules that exposes these internal services to the outside public internet
+# Without this file, your Grafana dashboard would be completely inaccessible from the outside world. 
+# This file secures the connection with automated SSL and routes the public traffic to the correct internal analytics server.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: grafana-ingress
-  namespace: monitoring  # must live in the same namespace as the engine
+  namespace: monitoring  # must live in the same namespace as the engine - prometheus and grafana
   annotations:
     ingressClassName: "traefik"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"  # refer to 09-cert-issuer.yaml which is accountable to providing the certficate
 spec:
   tls:
   - hosts: 
@@ -51,6 +53,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: khudse-backend-monitor-grafana
+            name: khudse-backend-monitor-grafana  # refer to 05-monitoring.yaml file where the repo got installed in the name of khudse-backend-monitor and grafana is appended
             port:
               number: 80

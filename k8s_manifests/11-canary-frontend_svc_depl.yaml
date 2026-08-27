@@ -29,7 +29,7 @@ spec:
         app: frontend-canary
     spec:
       containers:
-        - name: frontend
+        - name: frontend-ui
           image: ghcr.io/ritishadhikari/topic_to_content-ui:v2-canary
           imagePullPolicy: Always
           ports:

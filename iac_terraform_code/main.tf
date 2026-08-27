@@ -26,6 +26,8 @@ resource "aws_subnet" "public_subnet" {
   tags                    = { Name = "${var.project_name}-subnet" }
 }
 
+# By default, AWS creates a hidden, internal-only route table for your VPC that says: "If a server is trying to talk to another server inside the 10.0.0.0/16 network, allow it. If it tries to talk to anything else, drop the traffic."
+# This block overrides that default behavior. It explicitly tells your network: "If a server asks to connect to an IP address that isn't inside our private network (0.0.0.0/0), don't drop the traffic—forward it out the Internet Gateway door."
 # create the route table
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.khudse_vpc.id

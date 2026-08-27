@@ -11,7 +11,7 @@ spec:
       rules:
       # Tripwire 1: Frontend Crash Loop
       - alert: FrontendRestartLoop
-        expr: sum(changes(kube_pod_container_status_restarts_total{namespace="default", container="frontend"}[3m])) by (pod) >3
+        expr: sum(changes(kube_pod_container_status_restarts_total{namespace="default", container=~"frontend.*"}[3m])) by (pod) >3
         for: 3m
         labels:
           severity: critical

@@ -12,8 +12,20 @@ metadata:
   namespace: kube-system  # the helmchart gets installed in the kubesystem namespace
 spec:
   repo: https://prometheus-community.github.io/helm-charts
-  chart: kube-prometheus-stack
-  targetNamespace: monitoring  # install the promethues in the monitoring namespace and look for service monitor files that shares its release name - khudse-backend-monitor. Once it finds it, it shall start scraping the labels for the services in the namespace (default in this case) instructed to be scanned
+  chart: kube-prometheus-stack  # install this chart and name this khudse-backend-monitor
+  
+  # When the Helm engine unpacked the kube-prometheus-stack inside your cluster, it stamped out dozens of resources and injected your release name into all of them:
+
+    # The Prometheus server became khudse-backend-monitor-prometheus
+    # The Alertmanager became khudse-backend-monitor-alertmanager
+    # And the Grafana service automatically became khudse-backend-monitor-grafana
+
+  # So, when we were writing the 04-ingress.yaml file, we had to point the traffic to khudse-backend-monitor-grafana because that is the exact name Helm predictably auto-generated for the Grafana service when it deployed the chart!
+
+  targetNamespace: monitoring  # install the promethues in the monitoring namespace and look for service monitor files that shares its release name - khudse-backend-monitor. Once it finds it, it shall start scraping the labels for the services in the namespace (default in this case) instructed to be scanned by the service monitor
+
+  # The valuesContent block acts as your override configuration. When you download a Helm chart, it comes with thousands of lines of default settings.
+  # By listing alertmanager, grafana, and prometheus under valuesContent, you are telling Helm: "I want to install the standard bundle: https://prometheus-community.github.io/helm-charts, but I want to inject my own custom SMTP email secrets for Alertmanager, my own admin passwords for Grafana, and my own data retention rules for Prometheus."
   valuesContent: |-
 
     alertmanager:
@@ -58,3 +70,5 @@ spec:
           requests:
             memory: 512Mi
             cpu: 250m
+
+# Because you named the HelmChart resource khudse-backend-monitor in the metadata section, K3s uses that exact string as the official "Release Name" for the installation.  Deep inside the kube-prometheus-stack source code, the developers wrote dynamic naming templates that look something like this: {{ .Release.Name }}-{{ .Component.Name }}.So, when Helm physically stamps out the resources into your monitoring namespace, it automatically combines your Release Name with the components you configured in the valuesContent, resulting in:  khudse-backend-monitor-grafanakhudse-backend-monitor-prometheuskhudse-backend-monitor-alertmanager

@@ -151,7 +151,6 @@ async def test_mcp_list_user_courses_success(mock_mongo_client, async_client):
     assert f"- **Overarching Project** {project_string}" in response
 
 # Get Lesson Deep Dive Tool Tests
-
 @pytest.mark.asyncio
 @patch(target="mcp_code.mcp_server.AsyncIOMotorClient")
 async def test_mcp_get_lesson_deep_dive_not_found(mock_mongo_client, async_client):

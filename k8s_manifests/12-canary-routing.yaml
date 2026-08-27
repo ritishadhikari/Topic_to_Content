@@ -42,10 +42,10 @@ spec:
   entryPoints:
     - websecure  # https
   routes:
-    - match: Host(`khudse.duckdns.org`)
+    - match: Host(`khudse.duckdns.org`)  # when requests coming from here then ->
       kind: Rule
       services:
-        - name: frontend-canary-split
+        - name: frontend-canary-split  # then -> split the traffic as defined in this section (see above-middle)
           kind: TraefikService
   tls:
-    secretName: khudse-frontend-tls
+    secretName: khudse-frontend-tls  # take the private key from this location as defined in khudse-frontend-cert (see above)
