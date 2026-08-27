@@ -17,10 +17,10 @@ def test_login_form_validation_empty_fields(base_app):
     """
     at=base_app.run()
 
-    at.text_input[0].input("")  # username
-    at.text_input[1].input("")  # password
+    at.text_input[3].input("")  # username
+    at.text_input[4].input("")  # password
 
-    at.button[0].click().run()
+    at.button[1].click().run()
 
     assert len(at.warning) > 0
     assert "Please enter both username and password" in at.warning[0].value
