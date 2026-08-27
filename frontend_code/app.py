@@ -102,7 +102,7 @@ if st.session_state.auth_token is None:
                                 st.success(body="Account created successfully! You may now log in.")
                                 logger.info(msg=f"Account for User `{reg_user}` created successfully")
                             elif response.status_code==400:
-                                st.error(body=response.get("detail","Username already exists!"))
+                                st.error(body=response.json().get("detail","Username already exists!"))
                                 logger.warning(msg=f"Username already exists for the user - {reg_user}")
                             else:
                                 st.error(body=f"An error occurred during registration.{response.status_code}")
